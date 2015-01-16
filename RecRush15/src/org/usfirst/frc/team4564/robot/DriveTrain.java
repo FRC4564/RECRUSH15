@@ -113,6 +113,18 @@ public class DriveTrain extends RobotDrive {
     	//targetHeading = targetHeading % 360;
     }
     
+    // Normalizes 
+    private double normalize(double heading){
+    	double a;
+    	a = heading/360;
+    	a = a - (int)a;
+    	if (a > 0) {
+    		return a * 360;
+    	} else {
+    		return (1 + a) * 360;
+    	}
+    }
+    
     public void init()
     {
     	gyro.reset();
