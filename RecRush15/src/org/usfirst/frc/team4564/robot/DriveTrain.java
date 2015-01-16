@@ -125,6 +125,7 @@ public class DriveTrain extends RobotDrive {
     	}
     }
     
+    // Initialize drive train components
     public void init()
     {
     	gyro.reset();
