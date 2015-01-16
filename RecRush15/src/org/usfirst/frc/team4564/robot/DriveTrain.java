@@ -113,7 +113,7 @@ public class DriveTrain extends RobotDrive {
     	//targetHeading = targetHeading % 360;
     }
     
-    // Normalizes 
+    // Normalizes a heading to be within 0 to 360 degrees
     private double normalize(double heading){
     	double a;
     	a = heading/360;
