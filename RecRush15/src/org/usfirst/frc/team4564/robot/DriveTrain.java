@@ -25,7 +25,7 @@ public class DriveTrain extends RobotDrive {
     private double targetHeading = 0;
     private double prevTurn = 0;
     private double error = 0;
-    private final static double Kp = 0.1;
+    private final static double Kp = 0.3;
     private double P = 0;
     
     
@@ -53,6 +53,14 @@ public class DriveTrain extends RobotDrive {
         return speed;
     }
     
+    private double deadzone(double input) {
+    	if (Math.abs(input) < .05) {
+    		return (0);
+    	} else {
+    		return (input);
+    	}
+    }
+    
     public void arcadeDriver(double drive, double turn) {
     	hDrive(drive, turn, 0);
     }
@@ -62,8 +70,9 @@ public class DriveTrain extends RobotDrive {
     }
     
     public void hDrive(double drive, double turn, double slide){
-    	heading = gyro.getAngle()%360;
-    	SmartDashboard.putNumber("Gyro", Math.abs(gyro.getAngle()%360));
+    	turn = deadzone(turn);
+    	heading = gyro.getAngle();
+    	SmartDashboard.putNumber("Gyro", Math.abs(gyro.getAngle()));
     	SmartDashboard.putNumber("Target Heading", targetHeading);
     	// Heading hold
     	if (turn == 0 ) {
@@ -96,40 +105,48 @@ public class DriveTrain extends RobotDrive {
     	frontC.set(-slide);
     	rearC.set(slide - turn * 0.5);
     }
+    	
+    	// Normalizes a heading to be within 0 to 360 degrees.
+        private double normalize(double heading){
+        	double a;
+        	a = heading/360;
+        	a = a - (int)a;
+        	if (a > 0) {
+        		return a * 360;
+        	} else {
+        		return (1 + a) * 360;
+        	}
+        }
+        
     public void rotateTo(double heading) {
-    	targetHeading = heading % 360;
+    	double diff;
+    	diff = heading - normalize(gyro.getAngle()); 
+        diff = normalize(diff);
+        if (diff < 180) {
+        	targetHeading = gyro.getAngle() + diff;
+        } else {
+    		targetHeading = gyro.getAngle() - (360 - diff);
+    	}
     }
- 
+    	
+    		
     public void rotateLeft() {
-    	rotateTo(gyro.getAngle() - 90);
-    	//targetHeading = Math.floor((gyro.getAngle()-90) / 90)*90;
-    	//targetHeading = targetHeading % 360;
+    	targetHeading = Math.floor((gyro.getAngle()-88) / 90)*90;
     }
     	
     
     public void rotateRight() {
-    	rotateTo(gyro.getAngle() + 90);
-    	//targetHeading = Math.floor((gyro.getAngle()+90+2) / 90)*90;
-    	//targetHeading = targetHeading % 360;
+    	targetHeading = Math.floor((gyro.getAngle()+90+2) / 90)*90;
     }
     
-    // Normalizes a heading to be within 0 to 360 degrees.
-    private double normalize(double heading){
-    	double a;
-    	a = heading/360;
-    	a = a - (int)a;
-    	if (a > 0) {
-    		return a * 360;
-    	} else {
-    		return (1 + a) * 360;
-    	}
-    }
+    
     
     // Initialize drive train components
     public void init()
     {
     	gyro.reset();
-    	gyro.setSensitivity(.00672);
+    	gyro.setSensitivity(.00669);
+    	targetHeading = 0;
     }
 }
 

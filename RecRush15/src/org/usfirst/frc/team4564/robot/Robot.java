@@ -80,7 +80,7 @@ public class Robot extends SampleRobot {
         	} else if (stick.getRawButton(3)) {
         		dt.translateDrive(stick.getY(), stick.getX());
         	} else {
-        		dt.hDrive(stick.getY(), stick.getX(), stick.getZ());
+        		dt.hDrive(stick.getY(), stick.getX(), 0);
         	}
         	
         	if (stick.getRawButton(4)){
