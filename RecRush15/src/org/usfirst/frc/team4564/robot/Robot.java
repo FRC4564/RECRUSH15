@@ -8,10 +8,8 @@ import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.Solenoid;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -40,14 +38,14 @@ public class Robot extends SampleRobot {
     Talon rR = new Talon(3);
     Victor fC = new Victor(4);
     Victor rC = new Victor(5);  
-   
+    Lift lift = new Lift();
     
 // Jacob's Pneumatics Code
      
-    Compressor comp = new Compressor();
-    Solenoid valve1 = new Solenoid(0);
-    Solenoid valve2 = new Solenoid(1);
-    DigitalInput valveswitch = new DigitalInput(0);
+  //  Compressor comp = new Compressor();
+  //  Solenoid valve1 = new Solenoid(0);
+  //  Solenoid valve2 = new Solenoid(1);
+  //  DigitalInput valveswitch = new DigitalInput(0);
 
     public Robot() {
         dt = new DriveTrain(fL, rL, fR, rR, fC, rC);
@@ -73,7 +71,8 @@ public class Robot extends SampleRobot {
     public void operatorControl() {
         dt.setSafetyEnabled(true);
         dt.init();
-        comp.setClosedLoopControl(true);
+        // compressor control
+        //comp.setClosedLoopControl(true);
         while (isOperatorControl() && isEnabled()) {
         	if (stick.getRawButton(2)){
         		dt.arcadeDriver(stick.getY(), stick.getX()); // drive with arcade style (use right stick)
@@ -88,6 +87,11 @@ public class Robot extends SampleRobot {
             } else if (stick.getRawButton(5)){
             	dt.rotateRight();
         	}
+        	// Test lift homing function
+        	if(stick.getRawButton(6)) {
+        		lift.init();
+        	}
+        	
         	
         	/**if(stick.getRawButton(10))
         	{
@@ -107,16 +111,16 @@ public class Robot extends SampleRobot {
         		valve2.set(false);
         	}**/
         	
-        	if(valveswitch.get()== true) 
-        	{
-        		valve1.set(true);
-        		valve2.set(false);
-        	}
-        	else {
-        		valve1.set(false);
-        		valve2.set(true);
-        		
-        	}
+        	//if(valveswitch.get()== true) 
+        	//{
+        	//	valve1.set(true);
+        	//	valve2.set(false);
+        	//}
+        	//else {
+        	//	valve1.set(false);
+        	//	valve2.set(true);
+        	//	
+        	//}
        
             Timer.delay(0.01);		// wait for a motor update time
         }
