@@ -130,13 +130,13 @@ public class DriveTrain extends RobotDrive {
     }
     	
     		
-    public void rotateLeft() {
-    	targetHeading = Math.floor((gyro.getAngle()-88) / 90)*90;
+    public void rotateLeft90() {
+    	targetHeading = Math.floor((gyro.getAngle()-2) / 90)*90;
     }
     	
     
-    public void rotateRight() {
-    	targetHeading = Math.floor((gyro.getAngle()+90+2) / 90)*90;
+    public void rotateRight90() {
+    	targetHeading = Math.floor((gyro.getAngle()+92) / 90)*90;
     }
     
     
