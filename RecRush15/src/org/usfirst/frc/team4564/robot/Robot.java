@@ -32,15 +32,15 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends SampleRobot {
     DriveTrain dt;
     Joystick stick;
-    Talon fL = new Talon(0);
-    Talon rL = new Talon(1);
-    Talon fR = new Talon(2);
-    Talon rR = new Talon(3);
-    Victor fC = new Victor(4);
-    Victor rC = new Victor(5);  
+    Talon fL = new Talon(Constants.PWM_DRIVE_FL);
+    Talon rL = new Talon(Constants.PWM_DRIVE_RL);
+    Talon fR = new Talon(Constants.PWM_DRIVE_FR);
+    Talon rR = new Talon(Constants.PWM_DRIVE_RR);
+    Victor fC = new Victor(Constants.PWM_DRIVE_FC);
+    Victor rC = new Victor(Constants.PWM_DRIVE_RC);  
     Lift lift = new Lift();
     
-// Jacob's Pneumatics Code
+// Pneumatics Code In Progress
      
   //  Compressor comp = new Compressor();
   //  Solenoid valve1 = new Solenoid(0);
