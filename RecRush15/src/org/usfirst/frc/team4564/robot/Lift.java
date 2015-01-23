@@ -28,26 +28,32 @@ public class Lift {
     private static final double Kp = 0.3;
     private static final double MAX_SPEED = 1.0;
 	// encoder values
-	private static final int COUNTS_PER_INCH = 100;
+	private static final double COUNTS_PER_INCH = 10;
     private static final int TOLERANCE = 2;   //allowable tolerance between target and encoder
 	// motor constants
 	private static final boolean MOTOR_INVERT = false; // inverted means positive motor values move down
-	private static final double MOTOR_HOME_SPEED = -0.25;  //speed to move lift with finding home position
+	private static final double MOTOR_INIT_SPEED = -0.25;  //speed to move lift when finding home position
 	// limit switch constants
 	private static final boolean UPPER_LIMIT_PRESSED = true;
-	private static final boolean LOWER_LIMIT_PRESSED = true;
+	private static final boolean LOWER_LIMIT_PRESSED = false;
 
+	
+	public void init() {
+		liftState = LIFT_INIT;
+	}
+	
 	// Find home - which is at lowest position
-	public void updateInit() {
+	private void updateInit() {
 		// Move to lower limit switch
 		if (lowerLimit.get() != LOWER_LIMIT_PRESSED) {
-			moveLift(MOTOR_HOME_SPEED);
+			moveLift(MOTOR_INIT_SPEED);
 			SmartDashboard.putNumber("encoder", encoder.get());
 		} else {
 			// Set encoder count to 0, which is considered 'home'
+			moveLift(0);
 			encoder.reset();
 			liftState = LIFT_IDLE;
-		}
+		} 
 	}
 	
 	
@@ -68,7 +74,6 @@ public class Lift {
 		if (directionUp) {
 			if (upperLimit.get() == UPPER_LIMIT_PRESSED) {
 				liftMotor.set(0);
-				liftTarget = encoder.get();
 				liftSpeed = 0;
 			} else {
 				liftMotor.set(motorSpeed);
@@ -76,7 +81,6 @@ public class Lift {
 		} else {
 			if (lowerLimit.get() == LOWER_LIMIT_PRESSED) {
 				liftMotor.set(0);
-				liftTarget = encoder.get();
 				liftSpeed = 0;
 			} else {
 				liftMotor.set(motorSpeed);
@@ -100,7 +104,14 @@ public class Lift {
 		moveLift(liftSpeed);
 	}
 	
-	public void updateMove() {
+	public void move(double height) {
+		if (liftState == LIFT_IDLE || liftState == LIFT_MOVING) {
+			liftTarget = (int) (COUNTS_PER_INCH * height);
+			liftState = LIFT_MOVING;
+		}
+	}
+	
+	private void updateMove() {
 		if (Math.abs(encoder.get() - liftTarget) <= TOLERANCE) {
 			liftState = LIFT_IDLE;
 		} else {
@@ -110,7 +121,6 @@ public class Lift {
 	public void update() {
 		
 		if (liftState == LIFT_STOPPED) {
-			liftState = LIFT_INIT;
 		} else if (liftState == LIFT_INIT) {
 			updateInit();
 		} else if (liftState == LIFT_IDLE) {
@@ -119,7 +129,14 @@ public class Lift {
 			updateMove();
 		}
 		SmartDashboard.putNumber("encoder", encoder.get());
+		SmartDashboard.putNumber("lift state", liftState);
+		SmartDashboard.putNumber("lift target", liftTarget);
 			
+		
+	}
+	
+	public boolean isIdle() {
+		return liftState == LIFT_IDLE;
 		
 	}
 }
