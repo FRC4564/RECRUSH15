@@ -1,25 +1,41 @@
 package org.usfirst.frc.team4564.robot;
 
 import edu.wpi.first.wpilibj.AnalogInput;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Gyro;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.SpeedController;
+import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
 /**
  *
- * @author Ben
+ * @author Ben, Jacob, Steve
  */
 public class DriveTrain extends RobotDrive {
     
     double speed = 0;
     double accel = 0.25;
-    boolean init = true;
-    SpeedController frontC;
-    SpeedController rearC;
-    
-    // gyro-based heading control
+    SpeedController frontCenter;
+    SpeedController rearCenter;
+    // Encoder definitions
+    private Encoder encoderFB = new Encoder(Constants.DIO_DRIVE_FB_ENCODER_A, Constants.DIO_DRIVE_FB_ENCODER_B, 
+    		false, EncodingType.k1X);
+    private Encoder encoderLR = new Encoder(Constants.DIO_DRIVE_LR_ENCODER_A, Constants.DIO_DRIVE_LR_ENCODER_B,
+    		false, EncodingType.k1X);
+    private static final int COUNTS_PER_INCH_FB = 100;
+    private static final int COUNTS_PER_INCH_LR = 100;
+    // PID Definitions
+    private static final double Kp_FB = .5;
+    private static final double Kp_LR = .5;
+    private static final int MAX_SPEED_FB = 1;
+    private static final int TOLERANCE_FB = 5; // allowable tolerance between target and encoder
+    private static final int STATE_IDLE = 0;
+    private static final int STATE_MOVING = 1;
+    private int moveTargetFB = 0;
+    private int stateFB = 0;
+    // Gyro-based heading control
     Gyro gyro = new Gyro(0);
     private double heading = 0;
     private double targetHeading = 0;
@@ -35,8 +51,6 @@ public class DriveTrain extends RobotDrive {
         setInvertedMotor(RobotDrive.MotorType.kRearLeft,true);
         setInvertedMotor(RobotDrive.MotorType.kFrontRight,false);
         setInvertedMotor(RobotDrive.MotorType.kRearRight,true);
-        frontC = frontCenter;
-        rearC = rearCenter;
     }
     
     // Set speed based on Y value from joystick and a straight line acceleration curve
@@ -139,8 +153,6 @@ public class DriveTrain extends RobotDrive {
     	targetHeading = Math.floor((gyro.getAngle()+92) / 90)*90;
     }
     
-    
-    
     // Initialize drive train components
     public void init()
     {
@@ -148,5 +160,37 @@ public class DriveTrain extends RobotDrive {
     	gyro.setSensitivity(.00669);
     	targetHeading = 0;
     }
-}
+    
+    private void PIDMoveFB() {
+	    double error = 0;
+	    double P_FB = 0;
+	    double moveSpeed = 0;
+		// Calculate PID
+		error = moveTargetFB - encoderFB.get();
+		// Are we there yet?
+		if (Math.abs(error) > TOLERANCE_FB) {
+			stateFB = STATE_MOVING;
+			P = error * Kp_FB;
+			moveSpeed = P_FB;
+			if (moveSpeed > MAX_SPEED_FB) {
+				moveSpeed = MAX_SPEED_FB;
+			} else if (moveSpeed < -MAX_SPEED_FB) {
+				moveSpeed = -MAX_SPEED_FB;
+			}
+			hDrive(moveSpeed, 0, 0);
+		} else {
+			stateFB = STATE_IDLE;
+			hDrive(0,0,0);
+		}
+	}
+    
+    public void moveForward(double inches) {
+    	int delta = 0;
+    	delta = (int) (inches * COUNTS_PER_INCH_FB);
+    	moveTargetFB = encoderFB.get() + delta;
+    }
+    
+    public void PIDupdate() {
 
+    }
+}

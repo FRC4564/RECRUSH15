@@ -83,16 +83,28 @@ public class Robot extends SampleRobot {
         	}
         	
         	if (stick.getRawButton(4)){
-        		dt.rotateLeft();
+        		dt.rotateLeft90();
             } else if (stick.getRawButton(5)){
-            	dt.rotateRight();
+            	dt.rotateRight90();
         	}
         	// Test lift homing function
         	if(stick.getRawButton(6)) {
         		lift.init();
         	}
         	
+        	if(stick.getRawButton(7)) {
+        		lift.move(50);
+        	}
         	
+        	// previously lift.levelGo(3);, using for moveFree test
+        	if (lift.isIdle() || lift.isMoving()) {
+        		//lift.moveFree(stick.getZ());
+        	}
+        	
+        	if(stick.getRawButton(11)) {
+        		lift.levelGo(5);
+        	}
+        	lift.update();
         	/**if(stick.getRawButton(10))
         	{
         		valve1.set(true);
