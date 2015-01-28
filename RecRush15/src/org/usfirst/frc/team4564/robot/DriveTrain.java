@@ -17,8 +17,8 @@ public class DriveTrain extends RobotDrive {
     
     double speed = 0;
     double accel = 0.25;
-    SpeedController frontCenter;
-    SpeedController rearCenter;
+    SpeedController frontC;
+    SpeedController rearC;
     // Encoder definitions
     private Encoder encoderFB = new Encoder(Constants.DIO_DRIVE_FB_ENCODER_A, Constants.DIO_DRIVE_FB_ENCODER_B, 
     		false, EncodingType.k1X);

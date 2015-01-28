@@ -93,7 +93,7 @@ public class Robot extends SampleRobot {
         	}
         	
         	if(stick.getRawButton(7)) {
-        		lift.move(50);
+        		lift.gotoHeight(50);
         	}
         	
         	// previously lift.levelGo(3);, using for moveFree test
@@ -102,7 +102,7 @@ public class Robot extends SampleRobot {
         	}
         	
         	if(stick.getRawButton(11)) {
-        		lift.levelGo(5);
+        		lift.gotoLevel(5);
         	}
         	lift.update();
         	/**if(stick.getRawButton(10))
@@ -134,7 +134,7 @@ public class Robot extends SampleRobot {
         	//	
         	//}
        
-            Timer.delay(0.01);		// wait for a motor update time
+            Timer.delay(1.0 / Constants.REFRESH_RATE);		// wait before repeating main update loop
         }
     }
 
