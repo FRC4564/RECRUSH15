@@ -45,12 +45,15 @@ public class DriveTrain extends RobotDrive {
     private double P = 0;
     
     
-    public DriveTrain(SpeedController frontLeft, SpeedController rearLeft, SpeedController frontRight, SpeedController rearRight, SpeedController frontCenter, SpeedController rearCenter) {
+    public DriveTrain(SpeedController frontLeft, SpeedController rearLeft, SpeedController frontRight, SpeedController rearRight, 
+    		          SpeedController frontCenter, SpeedController rearCenter) {
         super(frontLeft, rearLeft, frontRight, rearRight);
         setInvertedMotor(RobotDrive.MotorType.kFrontLeft,true);
         setInvertedMotor(RobotDrive.MotorType.kRearLeft,true);
         setInvertedMotor(RobotDrive.MotorType.kFrontRight,false);
         setInvertedMotor(RobotDrive.MotorType.kRearRight,true);
+        frontC = frontCenter;
+        rearC = rearCenter;
     }
     
     // Set speed based on Y value from joystick and a straight line acceleration curve
