@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.Victor;
 //import edu.wpi.first.wpilibj.Joystick;
 
@@ -31,38 +32,40 @@ public class Lift {
     private static final int MAX_LEVEL = 6; // Highest level lift can reach.
 
     //PID constants and variables
-    private static final double VEL_Kp = 0.014;
-    private static final double VEL_Kd = 0.0;
-    private static final double MOTOR_MAX_POWER = 1.0;  //Maximum allowed motor power (contstrained by Velocity PID) 
-    private static final double HEIGHT_Kp = 0.014;
-    private static final double HEIGHT_Kd = 0.0;
-    private static final double VEL_MAX_IPS = 10.0;     //Fastest allowed movement of lift (constrained by Height PID).
+    private static final double VEL_Kp = 0.01;
+    private static final double VEL_Kd = 0.001;
+    private static final double MOTOR_MAX_POWER = 1.0;  //Maximum allowed motor power (constrained by Velocity PID) 
+    private static final double HEIGHT_Kp = 1.0;
+    private static final double HEIGHT_Kd = 0.1;
+    private static final double VEL_MAX_IPS = 4.0;     //Fastest allowed movement of lift (constrained by Height PID).
     private double targetPIDVelocity = 0.0;	            //Target Velocity, controlled via PID
     private double prevPIDVelocityError = 0.0;          //Used for PID derivative
+    private double prevPIDVelocityPower = 0.0;          //Motor power is adjusted by PID
     private double targetPIDHeight = LIFT_LEVEL0;       //Target Height (inches from floor to bottom of arm), controlled via PID
     private double prevPIDHeightError = 0.0;            //Used for PID derivative
 
     
     // Encoder, Motor, Limit switch contants
-	private static final double COUNTS_PER_INCH = 10;  //encoder counts per inch of lift movement
-    private static final int TOLERANCE = 2;   //allowable tolerance between target and encoder for positional alignment
-	private static final boolean MOTOR_INVERT = false; // inverted means positive motor values move down
+	private static final double COUNTS_PER_INCH = 250;  //encoder counts per inch of lift movement
+    private static final double TOLERANCE = 0.2;        //allowable inch tolerance between target and encoder for positional alignment
+	private static final boolean MOTOR_INVERT = false;  // inverted means positive motor values move down
 	private static final double MOTOR_INIT_SPEED = -0.25;  //speed to move lift when finding home position
-	private static final boolean UPPER_LIMIT_PRESSED = false;
-	private static final boolean LOWER_LIMIT_PRESSED = false;
+	private static final boolean UPPER_LIMIT_PRESSED = false;  //Value of limit switch when pressed
+	private static final boolean LOWER_LIMIT_PRESSED = false;  //Value of limit switch when pressed
 
 	// define hardware
     private DigitalInput lowerLimit = new DigitalInput(Constants.DIO_LIFT_BOTTOM);
     private DigitalInput upperLimit = new DigitalInput(Constants.DIO_LIFT_TOP);
     private Victor liftMotor = new Victor(Constants.PWM_LIFT_MOTOR);
     private Encoder encoder = new Encoder(Constants.DIO_LIFT_ENCODER_A, Constants.DIO_LIFT_ENCODER_B,
-    									  false, EncodingType.k4X);
+    									  true, EncodingType.k4X);
     
     // Lift variables
     private int liftState = LIFT_STOPPED;          //State determines what action is pending and update() manages it.
     private int targetLevel = 0;	               //Level targeted for move.  Used by LevelUp and LevelDown
         
     
+     
 	public void init() {
 		liftState = LIFT_INIT;
 		encoder.setDistancePerPulse(1.0/COUNTS_PER_INCH);  // Calibrate encoder so that getRate() measures in inches/sec
@@ -112,13 +115,14 @@ public class Lift {
 		D = (error - prevPIDVelocityError) / (1.0 / Constants.REFRESH_RATE) * VEL_Kd;
 		prevPIDVelocityError = error;
 		//
-		power = P+D;
+		power = P+D+prevPIDVelocityPower;
 		if (power > MOTOR_MAX_POWER) {
 			power = MOTOR_MAX_POWER;
 		} else if (power < -MOTOR_MAX_POWER) {
 			power = -MOTOR_MAX_POWER;
 		}
 		setMotor(power);
+		prevPIDVelocityPower = power;
 	}
 	
 	
@@ -127,7 +131,7 @@ public class Lift {
 	private void PIDHeight() {
 	    double error, velocity, P, D;
 		// Calculate PID
-		error = targetPIDHeight - getHeight();  // Target - (Encoder Height + Lift starting height)
+		error = targetPIDHeight - getHeight();  // Height from floor targeted and current encoder  
 		P = error * HEIGHT_Kp;
 		D = (error - prevPIDHeightError) / (1.0 / Constants.REFRESH_RATE) * HEIGHT_Kd;
 		prevPIDHeightError = error;
@@ -165,7 +169,7 @@ public class Lift {
 		} else if (level == 2) {
 			return LIFT_LEVEL2;
 		} else if (level > 2) {
-			return LIFT_LEVEL2 + TOTE_STACKED * level;
+			return LIFT_LEVEL2 + TOTE_STACKED * (level - 2);
 		}
 		return LIFT_LEVEL0;
 	}
@@ -231,19 +235,19 @@ public class Lift {
 	private void updateMove() {
 		if (Math.abs(getHeight() - targetPIDHeight) <= TOLERANCE) {
 			liftState = LIFT_IDLE;
+			targetPIDHeight = getHeight();
 //			setBrake();
 		} else {
 			liftState = LIFT_MOVING;
 //			releaseBrake();
-			PIDHeight();
-			PIDVelocity();
 		}
+		PIDHeight();
+		PIDVelocity();
 	}
 
 	
 	// Must call this update procedure at a cycle of 100 times per second.
 	public void update() {
-		
 		if (liftState == LIFT_STOPPED) {
 		} else if (liftState == LIFT_INIT) {
 			updateInit();
@@ -262,9 +266,10 @@ public class Lift {
 		SmartDashboard.putNumber("Encoder velocity", encoder.getRate());
 		SmartDashboard.putNumber("Target height", targetPIDHeight);
 		SmartDashboard.putNumber("Target velocity", targetPIDVelocity);		
+		SmartDashboard.putNumber("PID Vel Error", prevPIDVelocityError);
+		SmartDashboard.putNumber("Target Level", targetLevel);
+		
 	}
-	
-	
 	// Is lift idle - Idle means lift is initialized and ready for a move request.
 	public boolean isIdle() {
 		return liftState == LIFT_IDLE;
