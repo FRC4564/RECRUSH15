@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Gyro;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.SpeedController;
+import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -19,22 +20,23 @@ public class DriveTrain extends RobotDrive {
     double accel = 0.25;
     SpeedController frontC;
     SpeedController rearC;
+
     // Encoder definitions
     private Encoder encoderFB = new Encoder(Constants.DIO_DRIVE_FB_ENCODER_A, Constants.DIO_DRIVE_FB_ENCODER_B, 
     		false, EncodingType.k1X);
     private Encoder encoderLR = new Encoder(Constants.DIO_DRIVE_LR_ENCODER_A, Constants.DIO_DRIVE_LR_ENCODER_B,
     		false, EncodingType.k1X);
-    private static final int COUNTS_PER_INCH_FB = 100;
-    private static final int COUNTS_PER_INCH_LR = 100;
+    private static final double COUNTS_PER_INCH_FB = 460 / 12.5663; // wheel circumference = 12.5663 /1 rev = 460
+    private static final double COUNTS_PER_INCH_LR = 250 / 12.5663; //wheel circumference = 12.5663 / 1 rev = 250 counts 
     // PID Definitions
-    private static final double Kp_FB = .5;
-    private static final double Kp_LR = .5;
+    private static final double Kp_FB = .005;
+    private static final double Kp_LR = .1;
     private static final int MAX_SPEED_FB = 1;
-    private static final int TOLERANCE_FB = 5; // allowable tolerance between target and encoder
-    private static final int STATE_IDLE = 0;
-    private static final int STATE_MOVING = 1;
-    private int moveTargetFB = 0;
-    private int stateFB = 0;
+    private static final int TOLERANCE_FB = 3; // allowable tolerance between target and encoder
+    private static final int STATE_IDLE = 0;   // Both FB and LR PIDs are disabled.  Heading hold is still active.
+    private static final int STATE_MOVING = 1; // PID control is active for FB and LR
+    private int moveTargetFB = 0;  //
+    private int moveStateFB = 0;  //Move state is managed by hDrive and set by rotate and move methods
     // Gyro-based heading control
     Gyro gyro = new Gyro(0);
     private double heading = 0;
@@ -50,10 +52,13 @@ public class DriveTrain extends RobotDrive {
         super(frontLeft, rearLeft, frontRight, rearRight);
         setInvertedMotor(RobotDrive.MotorType.kFrontLeft,true);
         setInvertedMotor(RobotDrive.MotorType.kRearLeft,true);
-        setInvertedMotor(RobotDrive.MotorType.kFrontRight,false);
-        setInvertedMotor(RobotDrive.MotorType.kRearRight,true);
+        setInvertedMotor(RobotDrive.MotorType.kFrontRight,true);
+        setInvertedMotor(RobotDrive.MotorType.kRearRight,false);
         frontC = frontCenter;
         rearC = rearCenter;
+        // Set encoder for distance measuring so the getDistance() can be used.
+		encoderFB.setDistancePerPulse(1.0/COUNTS_PER_INCH_FB);  // Calibrate encoder so that getRate() measures in inches/sec
+		encoderLR.setDistancePerPulse(1.0/COUNTS_PER_INCH_LR);  // Calibrate encoder so that getRate() measures in inches/sec
     }
     
     // Set speed based on Y value from joystick and a straight line acceleration curve
@@ -71,7 +76,7 @@ public class DriveTrain extends RobotDrive {
     }
     
     private double deadzone(double input) {
-    	if (Math.abs(input) < .05) {
+    	if (Math.abs(input) < .2) {
     		return (0);
     	} else {
     		return (input);
@@ -86,12 +91,26 @@ public class DriveTrain extends RobotDrive {
     	hDrive(drive, 0, slide);
     }
     
+    private void PIDRotate() {
+    	
+    }
+    
     public void hDrive(double drive, double turn, double slide){
+    	drive = deadzone(drive);
     	turn = deadzone(turn);
-    	heading = gyro.getAngle();
-    	SmartDashboard.putNumber("Gyro", Math.abs(gyro.getAngle()));
-    	SmartDashboard.putNumber("Target Heading", targetHeading);
+    	slide = deadzone(slide);
+    	// if any input is given, snap out of Move state
+    	if (drive != 0 || turn != 0 || slide != 0) {
+    		moveStateFB = STATE_IDLE;
+    	}
     	// Heading hold
+    	double heading = gyro.getAngle();
+    	SmartDashboard.putNumber("Gyro", gyro.getAngle());
+    	SmartDashboard.putNumber("Target Heading", targetHeading);
+    	SmartDashboard.putNumber("LR encoder", encoderLR.get());
+    	SmartDashboard.putNumber("LR distance", encoderLR.getDistance());
+    	SmartDashboard.putNumber("FB encoder", encoderFB.get());
+    	SmartDashboard.putNumber("FB distance", encoderFB.getDistance());
     	if (turn == 0 ) {
     		if (prevTurn != 0) {
     			targetHeading = heading;
@@ -110,6 +129,7 @@ public class DriveTrain extends RobotDrive {
     		if (turn > 1.0) {
     			turn = 1.0;
     		} else if (turn < -1.0) {
+    			
     			turn = -1.0;
     		}
     		SmartDashboard.putNumber("P Turn", turn );
@@ -119,8 +139,8 @@ public class DriveTrain extends RobotDrive {
     	}
     	// Drive
     	arcadeDrive(drive, turn);
-    	frontC.set(-slide);
-    	rearC.set(slide - turn * 0.5);
+    	frontC.set(-slide - turn * 0.2);
+    	rearC.set(slide - turn * 0.2);
     }
     	
     	// Normalizes a heading to be within 0 to 360 degrees.
@@ -166,34 +186,44 @@ public class DriveTrain extends RobotDrive {
     
     private void PIDMoveFB() {
 	    double error = 0;
-	    double P_FB = 0;
+	    double P = 0;
 	    double moveSpeed = 0;
 		// Calculate PID
 		error = moveTargetFB - encoderFB.get();
 		// Are we there yet?
 		if (Math.abs(error) > TOLERANCE_FB) {
-			stateFB = STATE_MOVING;
+			moveStateFB = STATE_MOVING;
 			P = error * Kp_FB;
-			moveSpeed = P_FB;
+			moveSpeed = P;
 			if (moveSpeed > MAX_SPEED_FB) {
 				moveSpeed = MAX_SPEED_FB;
 			} else if (moveSpeed < -MAX_SPEED_FB) {
 				moveSpeed = -MAX_SPEED_FB;
 			}
-			hDrive(moveSpeed, 0, 0);
+			hDrive(-moveSpeed, 0, 0);
+    		SmartDashboard.putNumber("moveSpeed", moveSpeed );
+    		SmartDashboard.putNumber("moveTarget", moveTargetFB );
+    		SmartDashboard.putNumber("encoder", encoderFB.get() );
+
 		} else {
-			stateFB = STATE_IDLE;
+			moveStateFB = STATE_IDLE;
 			hDrive(0,0,0);
 		}
 	}
     
     public void moveForward(double inches) {
-    	int delta = 0;
-    	delta = (int) (inches * COUNTS_PER_INCH_FB);
-    	moveTargetFB = encoderFB.get() + delta;
+    	int distance = 0;
+    	distance = (int) (inches * COUNTS_PER_INCH_FB);
+    	moveTargetFB = encoderFB.get() + distance;
+    	moveStateFB = STATE_MOVING;
     }
     
-    public void PIDupdate() {
-
+    public void updateMove() {
+    		PIDMoveFB();
+    	//	PIDMoveLR();
+    }
+    
+    public void gyroReset() {
+    	gyro.reset();
     }
 }

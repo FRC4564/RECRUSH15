@@ -32,12 +32,12 @@ public class Lift {
     private static final int MAX_LEVEL = 6; // Highest level lift can reach.
 
     //PID constants and variables
-    private static final double VEL_Kp = 0.01;
-    private static final double VEL_Kd = 0.001;
+    private static final double VEL_Kp = 0.002;
+    private static final double VEL_Kd = 0.000;
     private static final double MOTOR_MAX_POWER = 1.0;  //Maximum allowed motor power (constrained by Velocity PID) 
-    private static final double HEIGHT_Kp = 1.0;
+    private static final double HEIGHT_Kp = 3.0;
     private static final double HEIGHT_Kd = 0.1;
-    private static final double VEL_MAX_IPS = 4.0;     //Fastest allowed movement of lift (constrained by Height PID).
+    private static final double VEL_MAX_IPS = 15.0;     //Fastest allowed movement of lift (constrained by Height PID).
     private double targetPIDVelocity = 0.0;	            //Target Velocity, controlled via PID
     private double prevPIDVelocityError = 0.0;          //Used for PID derivative
     private double prevPIDVelocityPower = 0.0;          //Motor power is adjusted by PID
@@ -46,8 +46,8 @@ public class Lift {
 
     
     // Encoder, Motor, Limit switch contants
-	private static final double COUNTS_PER_INCH = 250;  //encoder counts per inch of lift movement
-    private static final double TOLERANCE = 0.2;        //allowable inch tolerance between target and encoder for positional alignment
+	private static final double COUNTS_PER_INCH = 56;  //encoder counts per inch of lift movement
+    private static final double TOLERANCE = 0.5;        //allowable inch tolerance between target and encoder for positional alignment
 	private static final boolean MOTOR_INVERT = true;  // inverted means positive motor values move down
 	private static final double MOTOR_INIT_SPEED = -0.25;  //speed to move lift when finding home position
 	private static final boolean UPPER_LIMIT_PRESSED = false;  //Value of limit switch when pressed
@@ -196,12 +196,12 @@ public class Lift {
 	// Move lift to a specific level
 	public void gotoLevel(int newLevel){
 		targetLevel = newLevel;
-		if (targetLevel > MAX_LEVEL) {
+		if (targetLevel >= MAX_LEVEL) {
 			targetLevel = MAX_LEVEL;
 		} else if (targetLevel < 0) {
 			targetLevel = 0;
 		}
-		gotoHeight(levelToInches(newLevel));
+		gotoHeight(levelToInches(targetLevel));
 	}
 
 	

@@ -3,6 +3,7 @@ package org.usfirst.frc.team4564.robot;
 
 
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.SampleRobot;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.Joystick;
@@ -11,6 +12,8 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.command.Command;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -32,6 +35,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends SampleRobot {
     DriveTrain dt;
     Joystick stick;
+    int prevPOV; //POV of dPad debouncing
     Talon fL = new Talon(Constants.PWM_DRIVE_FL);
     Talon rL = new Talon(Constants.PWM_DRIVE_RL);
     Talon fR = new Talon(Constants.PWM_DRIVE_FR);
@@ -39,11 +43,16 @@ public class Robot extends SampleRobot {
     Victor fC = new Victor(Constants.PWM_DRIVE_FC);
     Victor rC = new Victor(Constants.PWM_DRIVE_RC);  
     Lift lift = new Lift();
-    
+
+    //double prefTest;
+    //Preferences prefs;
+    //Command autoCommand;
+    //SendableChooser autoChooser;
+    int autoMode=0;
 // Pneumatics Code In Progress
      
-  //  Compressor comp = new Compressor();
-  //  Solenoid valve1 = new Solenoid(0);
+    Compressor comp = new Compressor();
+    Solenoid valve1 = new Solenoid(0);
   //  Solenoid valve2 = new Solenoid(1);
   //  DigitalInput valveswitch = new DigitalInput(0);
 
@@ -51,17 +60,42 @@ public class Robot extends SampleRobot {
         dt = new DriveTrain(fL, rL, fR, rR, fC, rC);
         dt.setExpiration(0.1);
         stick = new Joystick(0);
+
+        
     }
-   // public void robotInit() {
-   //     compressor.start();
-   // }
     
+    
+    public void robotInit() {
+    	comp.stop();
+    	//autoChooser = new SendableChooser();
+    	//autoChooser.addDefault("RotateLeft", "Left");
+    	//autoChooser.addObject("RotateRight", "Right");
+		
+    	//prefTest = prefs.getDouble("VelocityKp", 1.0);
+		//SmartDashboard.putNumber("Prefs Velocity Kp", prefTest);	
+    }
+    
+    public void disabled() {
+        while (isEnabled() == false) {
+        	if (stick.getRawButton(1)) {
+        		autoMode = autoMode + 1;
+        	}
+        	SmartDashboard.putNumber("Auto Mode", autoMode);
+        	Timer.delay(.25);
+        }
+    }
+
     /**
      * Drive left & right motors for 2 seconds then stop
      */
     public void autonomous() {
         dt.setSafetyEnabled(false);
-
+        dt.init();
+        //if (autoChooser.getSelected() == "Left") {
+        //	dt.rotateLeft90();
+        //} else {
+        //	dt.rotateRight90();
+        //}
         Timer.delay(2.0);		//    for 2 seconds
     }
 
@@ -69,41 +103,55 @@ public class Robot extends SampleRobot {
      * Runs the motors with arcade steering.
      */
     public void operatorControl() {
-        dt.setSafetyEnabled(true);
+        dt.setSafetyEnabled(true);  
         dt.init();
-        // compressor control
-        //comp.setClosedLoopControl(true);
+        Timer.delay(1);
+        comp.start();
         while (isOperatorControl() && isEnabled()) {
-        	if (stick.getRawButton(2)){
-        		dt.arcadeDriver(stick.getY(), stick.getX()); // drive with arcade style (use right stick)
-        	} else if (stick.getRawButton(3)) {
+        	if (stick.getRawButton(9)) {							    // Left thumbstick click to do Translate drive
         		dt.translateDrive(stick.getY(), stick.getX());
         	} else {
-        		dt.hDrive(stick.getY(), stick.getX(), 0);
+        		dt.hDrive(stick.getY(), stick.getX(), 0);               // Drive with arcade style using left stick by default
         	}
-        	
-        	if (stick.getRawButton(4)){
+
+        	if (stick.getRawButton(5)){									// Left bumper to rotate Left
         		dt.rotateLeft90();
-            } else if (stick.getRawButton(5)){
+            } else if (stick.getRawButton(6)){							// Right bumper to rotate right
             	dt.rotateRight90();
         	}
         	// Test lift homing function
-        	if(stick.getRawButton(6)) {
+        	if(stick.getRawButton(8)) {									// Start button to Initilize to home
         		lift.init();
         	}
         	
-        	if(stick.getRawButton(7)) {
-        		lift.gotoHeight(50);
+        	if(stick.getRawButton(4)) {									// Y-button to go to 50"
+        		dt.gyroReset();
         	}
         	
         	// previously lift.levelGo(3);, using for moveFree test
         	if (lift.isIdle() || lift.isMoving()) {
-        		//lift.moveFree(stick.getZ());
+        		lift.moveFree(stick.getZ());
         	}
         	
-        	if(stick.getRawButton(11)) {
-        		lift.gotoLevel(5);
+        	if(stick.getRawButton(3)) {									// X-button to go to 25"
+        		lift.gotoHeight(25);
         	}
+        	
+        	if (stick.getPOV(0) == 0) {
+        		if (prevPOV != 0) { lift.levelUp(); }
+        	} else if (stick.getPOV(0) == 180) {
+        		if (prevPOV != 180) { lift.levelDown(); }
+        	}
+        	
+        	if (stick.getRawButton(1)) {
+        		comp.start();
+        	}
+        	if (stick.getRawButton(2)) {
+        		comp.stop();
+        	}
+       
+        	prevPOV = stick.getPOV(0);
+        	
         	lift.update();
         	/**if(stick.getRawButton(10))
         	{
