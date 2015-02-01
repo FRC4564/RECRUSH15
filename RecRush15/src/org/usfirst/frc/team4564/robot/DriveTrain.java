@@ -43,7 +43,7 @@ public class DriveTrain extends RobotDrive {
     private double targetHeading = 0;
     private double prevTurn = 0;
     private double error = 0;
-    private final static double Kp = 0.3;
+    private final static double Kp = 0.03;
     private double P = 0;
     
     
@@ -139,8 +139,8 @@ public class DriveTrain extends RobotDrive {
     	}
     	// Drive
     	arcadeDrive(drive, turn);
-    	frontC.set(-slide - turn * 0.2);
-    	rearC.set(slide - turn * 0.2);
+    	frontC.set(-slide - turn * 0.07);
+    	rearC.set(slide - turn * 0.07);
     }
     	
     	// Normalizes a heading to be within 0 to 360 degrees.

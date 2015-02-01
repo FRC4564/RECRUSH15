@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Preferences;
+import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.Victor;
 //import edu.wpi.first.wpilibj.Joystick;
 
@@ -45,7 +46,7 @@ public class Lift {
     private double prevPIDHeightError = 0.0;            //Used for PID derivative
 
     
-    // Encoder, Motor, Limit switch contants
+    // Encoder, Motor, Limit switch constants
 	private static final double COUNTS_PER_INCH = 56;  //encoder counts per inch of lift movement
     private static final double TOLERANCE = 0.5;        //allowable inch tolerance between target and encoder for positional alignment
 	private static final boolean MOTOR_INVERT = true;  // inverted means positive motor values move down
@@ -56,7 +57,7 @@ public class Lift {
 	// define hardware
     private DigitalInput lowerLimit = new DigitalInput(Constants.DIO_LIFT_BOTTOM);
     private DigitalInput upperLimit = new DigitalInput(Constants.DIO_LIFT_TOP);
-    private Victor liftMotor = new Victor(Constants.PWM_LIFT_MOTOR);
+    private Talon liftMotor = new Talon(Constants.PWM_LIFT_MOTOR);
     private Encoder encoder = new Encoder(Constants.DIO_LIFT_ENCODER_A, Constants.DIO_LIFT_ENCODER_B,
     									  true, EncodingType.k4X);
     

@@ -35,6 +35,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Robot extends SampleRobot {
     DriveTrain dt;
     Joystick stick;
+    Joystick rstick;
     int prevPOV; //POV of dPad debouncing
     Talon fL = new Talon(Constants.PWM_DRIVE_FL);
     Talon rL = new Talon(Constants.PWM_DRIVE_RL);
@@ -52,18 +53,14 @@ public class Robot extends SampleRobot {
 // Pneumatics Code In Progress
      
     Compressor comp = new Compressor();
-    Solenoid valve1 = new Solenoid(0);
-  //  Solenoid valve2 = new Solenoid(1);
-  //  DigitalInput valveswitch = new DigitalInput(0);
 
     public Robot() {
         dt = new DriveTrain(fL, rL, fR, rR, fC, rC);
         dt.setExpiration(0.1);
         stick = new Joystick(0);
-
-        
+        rstick = new Joystick(0);
+        		
     }
-    
     
     public void robotInit() {
     	comp.stop();
@@ -78,10 +75,10 @@ public class Robot extends SampleRobot {
     public void disabled() {
         while (isEnabled() == false) {
         	if (stick.getRawButton(1)) {
-        		autoMode = autoMode + 1;
+        		autoMode =+ 1;
         	}
         	SmartDashboard.putNumber("Auto Mode", autoMode);
-        	Timer.delay(.25);
+        	Timer.delay(1);
         }
     }
 
@@ -108,7 +105,7 @@ public class Robot extends SampleRobot {
         Timer.delay(1);
         comp.start();
         while (isOperatorControl() && isEnabled()) {
-        	if (stick.getRawButton(9)) {							    // Left thumbstick click to do Translate drive
+        	if (stick.getRawButton(1)) {							    // Left thumbstick click to do Translate drive
         		dt.translateDrive(stick.getY(), stick.getX());
         	} else {
         		dt.hDrive(stick.getY(), stick.getX(), 0);               // Drive with arcade style using left stick by default
