@@ -48,7 +48,7 @@ public class Lift {
     // Encoder, Motor, Limit switch contants
 	private static final double COUNTS_PER_INCH = 250;  //encoder counts per inch of lift movement
     private static final double TOLERANCE = 0.2;        //allowable inch tolerance between target and encoder for positional alignment
-	private static final boolean MOTOR_INVERT = false;  // inverted means positive motor values move down
+	private static final boolean MOTOR_INVERT = true;  // inverted means positive motor values move down
 	private static final double MOTOR_INIT_SPEED = -0.25;  //speed to move lift when finding home position
 	private static final boolean UPPER_LIMIT_PRESSED = false;  //Value of limit switch when pressed
 	private static final boolean LOWER_LIMIT_PRESSED = false;  //Value of limit switch when pressed
