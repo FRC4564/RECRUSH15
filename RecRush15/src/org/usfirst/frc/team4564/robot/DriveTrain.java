@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.DriverStation;
 
 
 /**
@@ -111,6 +112,7 @@ public class DriveTrain extends RobotDrive {
     	SmartDashboard.putNumber("LR distance", encoderLR.getDistance());
     	SmartDashboard.putNumber("FB encoder", encoderFB.get());
     	SmartDashboard.putNumber("FB distance", encoderFB.getDistance());
+
     	if (turn == 0 ) {
     		if (prevTurn != 0) {
     			targetHeading = heading;

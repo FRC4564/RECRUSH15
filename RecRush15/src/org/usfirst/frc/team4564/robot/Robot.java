@@ -58,8 +58,7 @@ public class Robot extends SampleRobot {
         dt = new DriveTrain(fL, rL, fR, rR, fC, rC);
         dt.setExpiration(0.1);
         stick = new Joystick(0);
-        rstick = new Joystick(0);
-        		
+        rstick = new Joystick(1);
     }
     
     public void robotInit() {
