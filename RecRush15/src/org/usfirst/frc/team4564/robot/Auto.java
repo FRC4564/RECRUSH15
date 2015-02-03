@@ -1,6 +1,5 @@
 package org.usfirst.frc.team4564.robot;
 
-import java.util.List;
 import java.util.ArrayList;
 
 public class Auto {
@@ -12,7 +11,7 @@ public class Auto {
 	
 	private Countdown autoTimer;  //Make sure auto run is no longer than 15 seconds
 	ArrayList<String> script = new ArrayList<String>();
-	private ArrayList<ArrayList> playbook = new ArrayList<ArrayList>();
+	private ArrayList<ArrayList<String>> playbook = new ArrayList<ArrayList<String>>();
 	
 	// Command processing states
 	private static final int STOPPED = 0;  //No script active
@@ -81,7 +80,7 @@ public class Auto {
 	
 	private int runStep(String step) {
 		String command;
-		Double parameter;
+		double parameter;
 		
 		command = step.split(" ")[0];
 		command = command.toUpperCase();
@@ -94,16 +93,17 @@ public class Auto {
 		int status = INVALID;  //Status will change if command processes properly
 		
 		switch (command) {
+			// driveInit
 			case "DRIVEINIT":
 				dt.init();
 				status = DONE;
 				break;
-				
+			// driveForward <inches>	
 			case "DRIVEFORWARD":
 				dt.moveForward(parameter);
 				status = DONE;
 				break;
-				
+			// liftWait <timeout>	
 			case "LIFTWAIT":
 				if (processStatus == RUNNING) {
 					if (lift.isIdle()) {
@@ -120,7 +120,7 @@ public class Auto {
 					status = RUNNING;
 				}
 				break;
-			
+			// Unknown command
 			default:
 				status = BADCOMMAND;
 				break;
