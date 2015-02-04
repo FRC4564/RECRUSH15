@@ -44,6 +44,7 @@ public class Robot extends SampleRobot {
     Victor fC = new Victor(Constants.PWM_DRIVE_FC);
     Victor rC = new Victor(Constants.PWM_DRIVE_RC);  
     Lift lift = new Lift();
+    Claw claw = new Claw();
 
     //double prefTest;
     //Preferences prefs;
@@ -86,7 +87,9 @@ public class Robot extends SampleRobot {
      */
     public void autonomous() {
         dt.setSafetyEnabled(false);
-        dt.init();
+        //dt.init();
+        Auto auto = new Auto(dt, lift, claw);
+        auto.run(1);
         //if (autoChooser.getSelected() == "Left") {
         //	dt.rotateLeft90();
         //} else {
