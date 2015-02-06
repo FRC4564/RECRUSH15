@@ -39,39 +39,42 @@ public class Auto {
 		script.add("driveWait 5");
 		script.add("driveBackward 12");
 		script.add("driveWait 5");
-		playbook.add(script);
+		playbook.add(new ArrayList<String>(script));
 		script.clear();
 		//Script 2
 		script.add("liftInit");
 		script.add("liftWait 5");
 		script.add("level 2");
 		script.add("liftWait 5");
-		playbook.add(script);
+		playbook.add(new ArrayList<String>(script));
 		script.clear();
 		
 		
 	}
 	
+	// Increment the playbook selected play number, restricting to size of playbook
 	public void nextPlay() {
 		if (selectedPlay < playbook.size())
 			selectedPlay += 1;
 	}
 	
+	// Decrement the playbook selected play number, keeping it from going below zero.
 	public void prevPlay() {
 		if (selectedPlay > 0)
 			selectedPlay -= 1;
 	}
 	
+	// Returns the currently selected play number
 	public int getPlay() {
 		return selectedPlay;
 	}
 	
-	public void run(int play) {
-		int stepIndex = 0;  			// Pointer to next step to process
-		Countdown autoTimer = new Countdown();	// Countdown timer to make sure run stays within autonomous period
-		autoTimer.set(15);
+	public void run() {
+		int stepIndex = 0;  			        // Pointer to the current step with a play script.
+		Countdown autoTimer = new Countdown();	// Countdown timer to make sure the play completes within...
+		autoTimer.set(15);						// ...the 15 second autonomous period
 		
-		script = playbook.get(play);		// Load the script from the playbook
+		script = playbook.get(selectedPlay - 1);		// Load the script from the playbook
 		System.out.println(script);
 
 		while (! autoTimer.done()) {
@@ -97,7 +100,7 @@ public class Auto {
 			}
 			dt.updateMove();
 			lift.update();
-			//claw.update();
+			claw.update();
 			Timer.delay(2);
 
 		}
