@@ -34,8 +34,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends SampleRobot {
     DriveTrain dt;
-    Joystick stick;
-    Joystick rstick;
+    Xbox joyLift = new Xbox(0);
+    Xbox joyClaw = new Xbox(1);
     int prevPOV; //POV of dPad debouncing
     Talon fL = new Talon(Constants.PWM_DRIVE_FL);
     Talon rL = new Talon(Constants.PWM_DRIVE_RL);
@@ -45,6 +45,7 @@ public class Robot extends SampleRobot {
     Victor rC = new Victor(Constants.PWM_DRIVE_RC);  
     Lift lift = new Lift();
     Claw claw = new Claw();
+    Auto auto = new Auto(dt, lift, claw);
 
     //double prefTest;
     //Preferences prefs;
@@ -58,8 +59,7 @@ public class Robot extends SampleRobot {
     public Robot() {
         dt = new DriveTrain(fL, rL, fR, rR, fC, rC);
         dt.setExpiration(0.1);
-        stick = new Joystick(0);
-        rstick = new Joystick(1);
+        
     }
     
     public void robotInit() {
@@ -72,13 +72,18 @@ public class Robot extends SampleRobot {
 		//SmartDashboard.putNumber("Prefs Velocity Kp", prefTest);	
     }
     
+    // Robot is disabled.  Allow adjust of settings.
     public void disabled() {
         while (isEnabled() == false) {
-        	if (stick.getRawButton(1)) {
-        		autoMode =+ 1;
+        	if (joyLift.whenDpadUp()) {
+        		auto.nextPlay();
         	}
-        	SmartDashboard.putNumber("Auto Mode", autoMode);
-        	Timer.delay(1);
+        	
+        	if (joyLift.whenDpadDown()) {
+        		 auto.prevPlay();
+        	}
+        	SmartDashboard.putNumber("Play #", auto.getPlay());
+        	Timer.delay(Constants.REFRESH_RATE);
         }
     }
 
@@ -107,15 +112,15 @@ public class Robot extends SampleRobot {
         Timer.delay(1);
         comp.start();
         while (isOperatorControl() && isEnabled()) {
-        	if (stick.getRawButton(1)) {							    // Left thumbstick click to do Translate drive
-        		dt.translateDrive(stick.getY(), stick.getX());
+        	if (joyLift.A()) {							    // Left thumbstick click to do Translate drive
+        		dt.translateDrive(joyLift.leftY(), joyLift.leftX());
         	} else {
-        		dt.hDrive(stick.getY(), stick.getX(), 0);               // Drive with arcade style using left stick by default
+        		dt.hDrive(joyLift.leftY(), joyLift.leftX(), 0);               // Drive with arcade style using left stick by default
         	}
 
-        	if (stick.getRawButton(5)){									// Left bumper to rotate Left
+        	if (joyLift.leftBumper()) {									// Left bumper to rotate Left
         		dt.rotateLeft90();
-            } else if (stick.getRawButton(6)){							// Right bumper to rotate right
+            } else if (stick.getRawButton(6)) {							// Right bumper to rotate right
             	dt.rotateRight90();
         	}
         	// Test lift homing function

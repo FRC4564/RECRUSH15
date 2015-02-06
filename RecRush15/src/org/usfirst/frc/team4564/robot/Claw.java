@@ -36,9 +36,12 @@ public class Claw {
 	// PID Carriage
 	private static final double HEIGHT_Kp = 3.0;
     private static final double HEIGHT_Kd = 0.1;
+    private static final double SP_Kp = 0.002;
+    private static final double SP_Kd = 0.000;
     private double targetPIDHeight = CARRIAGE_LOWER_LIMIT;
 	private double prevPIDHeightError = 0.0;
-	 private double prevPIDSpeedError = 0.0;
+	private double prevPIDSpeedError = 0.0;
+	private double prevPIDSpeedPower = 0.0;
 	private static final double SP_MAX_IPS = 15.0;
 	private double targetPIDSpeed = 0.0;
 	private Talon liftMotor = new Talon(Constants.PWM_CARRIAGE_MOTOR);
@@ -53,12 +56,21 @@ public class Claw {
 	private static final boolean FOREBAR_SOL_DISABLE = ! FOREBAR_SOL_ENABLE;
 	private boolean forebarPostionUp = true;
 	private boolean forebarPostionStop = false;
+	
 	//Define Wrist 
 	private static final boolean VERTICAL_LIMIT_PRESSED = false;
 	private static final boolean HORIZONTAL_LIMIT_PRESSED = false;
 	private DigitalInput verticalLimit = new DigitalInput(Constants.DIO_VERTICAL_WRIST);
 	private DigitalInput horizontalLimit = new DigitalInput(Constants.DIO_HORIZONTAL_WRIST);
     private Talon wristMotor = new Talon(Constants.PWM_WRIST_MOTOR);
+    
+    //Wrist States
+    private int wristState = WRIST_STOPPED_HOR;
+    private static final int WRIST_STOPPED_HOR = 1;
+    private static final int WRIST_STOPPED_VER = 2;
+    private static final int WRIST_MOVING_HOR = 3;
+    private static final int WRIST_MOVING_VER = 4;
+   
 	//Define Hand 
     Solenoid handSol = new Solenoid(Constants.SOL_HAND);
 	private static final boolean HAND_OPEN = true;
@@ -66,6 +78,7 @@ public class Claw {
 	
 	public double getHeight() {
 		return encoder.getDistance() + CARRIAGE_LOWER_LIMIT;
+	}
 		
 	public void mastIn() {
 	    mastSol.set(MAST_IN);
@@ -97,7 +110,7 @@ public class Claw {
 		forebarPostionUp = false;
 	}
 	
-	public void FORBAR_SOL_STOP() {
+	public void forebareDown() {
 		forebarDown.set(FOREBAR_SOL_DISABLE);
 		forebarUp.set(FOREBAR_SOL_DISABLE);
 		forebarPostionStop = true;
@@ -118,34 +131,29 @@ public class Claw {
 		}
 		// based on the direction, determine which limit switch to test
 		// and move at the power provided.
-		if (directionUp) {
-			if (upperLimit.get() == UPPER_LIMIT_PRESSED) {
+		if (CarriageLimit.get() == CARRIAGE_LIMIT_PRESSED) {
 				power = 0;
 			}
-		} else {
-			if (lowerLimit.get() == LOWER_LIMIT_PRESSED) {
-				power = 0;
-			}
-		}
 		liftMotor.set(power);
-	}
+		}
+		
 	
 	private void PIDSpeed() {
 		double error, power, P, D;
 		// Calculate PID
 		error = targetPIDSpeed - encoder.getRate();
-		P = error * VEL_Kp;
-		D = (error - prevPIDSpeedError) / (1.0 / Constants.REFRESH_RATE) * VEL_Kd;
+		P = error * SP_Kp;
+		D = (error - prevPIDSpeedError) / (1.0 / Constants.REFRESH_RATE) * SP_Kd;
 		prevPIDSpeedError = error;
 		//
-		power = P+D+prevPIDSpeedPower;
+		power = P + D + prevPIDSpeedPower;
 		if (power > MOTOR_MAX_POWER) {
 			power = MOTOR_MAX_POWER;
 		} else if (power < -MOTOR_MAX_POWER) {
 			power = -MOTOR_MAX_POWER;
 		}
 		setMotor(power);
-		prevPIDVelocityPower = power;
+		prevPIDSpeedPower = power;
 	}
 	
 	private void carriagePIDHeight() {
@@ -165,7 +173,17 @@ public class Claw {
 		targetPIDSpeed = speed;
 	}
 
-	
+	// WRIST
+
+
+		public void	rotateClaw() {
+			if wristState = WRIST_STOPPED_HOR {
+				
+			}
+			
+		}
 }
+
+
 		
 	

@@ -13,6 +13,7 @@ public class Auto {
 	private Claw claw;
 	
 	private Countdown autoTimer;  //Make sure auto run is no longer than 15 seconds
+	private int selectedPlay = 1;  // Play # from playbook to run, stating at 1
 	ArrayList<String> script = new ArrayList<String>();
 	private ArrayList<ArrayList<String>> playbook = new ArrayList<ArrayList<String>>();
 	
@@ -49,6 +50,20 @@ public class Auto {
 		script.clear();
 		
 		
+	}
+	
+	public void nextPlay() {
+		if (selectedPlay < playbook.size())
+			selectedPlay += 1;
+	}
+	
+	public void prevPlay() {
+		if (selectedPlay > 0)
+			selectedPlay -= 1;
+	}
+	
+	public int getPlay() {
+		return selectedPlay;
 	}
 	
 	public void run(int play) {
