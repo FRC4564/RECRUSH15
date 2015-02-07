@@ -5,20 +5,16 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Claw {
 	
 	//Mast States
-
-
-
-	
-	
 	//Define Mast 
 	Solenoid mastSol = new Solenoid(Constants.SOL_MAST);
-	private static final boolean MAST_SOL_IN = true;  			//Solenoid setting to move mast in
-	private static final boolean MAST_SOL_OUT = ! MAST_SOL_IN;  //Solenoid setting to move mast out
-	private boolean mastPositionIn = true ;  					//Current mast position. True when mast is retracted
+	private static final boolean MAST_SOL_IN = true;  			//Solenoid setting to move mast in.
+	private static final boolean MAST_SOL_OUT = ! MAST_SOL_IN;  //Solenoid setting to move mast out.
+	private boolean mastPositionIn = true ;  					//Current mast position. True when mast is retracted.
 	//Define Carriage 
 	private Talon carriageMotor = new Talon(Constants.PWM_CARRIAGE_MOTOR);
 	private DigitalInput carriageLimit = new DigitalInput(Constants.DIO_CARRIAGE_TOP);  //At top of mast
@@ -41,9 +37,13 @@ public class Claw {
 	private double targetPIDSpeed = 0.0;
 	private static final boolean MOTOR_INVERT = true;  // Inverted means positive motor values moves carriage down
 	private static final double MOTOR_MAX_POWER = 1.0; // Maximum power allowed for carriage motor
+	private static final double SAFE_HEIGHT = 4.0;
+	
 	//Carriage States
-	private final static int CARRIAGE_IDLE = 0;
-	private final static int CARRIAGE_MOVING = 1;
+	private int carriageState = CARRIAGE_IDLE;
+	private final static int CARRIAGE_INIT = 0;
+	private final static int CARRIAGE_IDLE = 1;
+	private final static int CARRIAGE_MOVING = 2;
 
 	//Define Forebar
 	Solenoid forebarUpSol = new Solenoid(Constants.SOL_FOREBAR_UP);
@@ -54,12 +54,11 @@ public class Claw {
 	private boolean forebarPostionStop = false;
 	
 	//Define Wrist 
-	private static final boolean VERTICAL_LIMIT_PRESSED = false;
-	private static final boolean HORIZONTAL_LIMIT_PRESSED = false;
+	private static boolean VERTICAL_LIMIT_PRESSED = false; // This is the value of limit switch when pressed
+	private static boolean HORIZONTAL_LIMIT_PRESSED = false; // ^
 	private DigitalInput verticalLimit = new DigitalInput(Constants.DIO_VERTICAL_WRIST);
 	private DigitalInput horizontalLimit = new DigitalInput(Constants.DIO_HORIZONTAL_WRIST);
-    private Talon wristMotor = new Talon(Constants.PWM_WRIST_MOTOR);
-    
+    private Talon wristMotor = new Talon(Constants.PWM_WRIST_MOTOR);    
     //Wrist States
     private static final int WRIST_IDLE = 0;
     private static final int WRIST_MOVING_HOR = 1;
@@ -70,7 +69,6 @@ public class Claw {
     Solenoid handSol = new Solenoid(Constants.SOL_HAND);
 	private static final boolean HAND_SOL_OPEN = true;			//Solenoid value to open the hand
 	private static final boolean HAND_SOL_CLOSE = ! HAND_SOL_OPEN;  //Solenoid value to close the hand
-	
 	
 	public void init() {
 		carriageState = CARRIAGE_INIT;
@@ -112,7 +110,6 @@ public class Claw {
 		forebarUpSol.set(FOREBAR_SOL_DISABLE);
 	}
 	
-	
 	// CARRIAGE
 	
 	// Calculate the height of the carriage from the floor.
@@ -124,6 +121,7 @@ public class Claw {
 	// Positive power values move the lift up (set MOTOR_INVERT if motor must run backwards).
 	// Uses limit switch on top of mast and the encoder to measure distance from floor
 	// to stay within safe limits.
+	
 	private void setMotor(double power) {
 		// based on the direction, determine how to test limits
 		// and move at the power provided.
@@ -144,7 +142,6 @@ public class Claw {
 		carriageMotor.set(power);
 	}
 		
-	
 	private void PIDSpeed() {
 		double error, power, P, D;
 		// Calculate PID
@@ -180,43 +177,50 @@ public class Claw {
 		targetPIDSpeed = speed;
 	}
 
-	
+	private void safeHeight() {
+		if (HORIZONTAL_LIMIT_PRESSED = ! true && targetPIDHeight < SAFE_HEIGHT) {
+			targetPIDHeight = SAFE_HEIGHT;
+		}		
+	}
 	
 	// WRIST
 
-	// Iniitate moving the wrist to a horizontal position
+	// Initiate moving the wrist to a horizontal position
 	public void	horizontal() {
 		wristState = WRIST_MOVING_HOR;  		
 	}
 	
-	// Iniitate moving the wrist to a vertical position
+	// Initiate moving the wrist to a vertical position
 	public void	vertical() {
 		wristState = WRIST_MOVING_VER;  		
 	}
 
-	
 	//Update wrist movement based state.
 	private void wristUpdate() {
 		double power = 0;
 		if (wristState == WRIST_MOVING_HOR) {
 			// Power motor until limit switch is hit
-			if ()
+			if (HORIZONTAL_LIMIT_PRESSED = true); {
+				wristMotor.set(0);
+			} if (HORIZONTAL_LIMIT_PRESSED = ! true); {
+				wristMotor.set(MOTOR_MAX_POWER);
+		} if (wristState == WRIST_MOVING_VER) {
+			if (VERTICAL_LIMIT_PRESSED = true) {
+				wristMotor.set(0);
+			} if (VERTICAL_LIMIT_PRESSED = ! true); {
+				wristMotor.set(-MOTOR_MAX_POWER);
+			}
 		}
-		
 	}
-	
-
+}
 	// Call update method every refresh cycle to update carriage and wrist movement
 	public void update() {
 		PIDHeight();
 		PIDSpeed();
-		updateWrist();
-	}
-
-}
-
-
-
-
+		wristUpdate();
+		SmartDashboard.putNumber("Carriage Encoder", encoder.getDistance());
+		SmartDashboard.putBoolean("Carriage Limit?", carriageLimit.get() == CARRIAGE_LIMIT_PRESSED);
 		
+	}
+}
 	

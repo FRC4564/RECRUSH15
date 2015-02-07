@@ -24,6 +24,14 @@ public class Xbox extends Joystick {
 		super(port);
 	}
 	
+    private double deadzone(double input) {
+    	if (Math.abs(input) < .2) {
+    		return (0);
+    	} else {
+    		return (input);
+    	}
+    }
+    
 	public boolean A() {
 		return getRawButton(1);
 	}
@@ -87,7 +95,7 @@ public class Xbox extends Joystick {
 			if (prevY) {
 				return false;
 			} else {
-				prevX = true;
+				prevY = true;
 				return true;
 				
 			}
@@ -156,7 +164,7 @@ public class Xbox extends Joystick {
 	}
 	
 	public boolean whenStart() {
-		if (leftBumper()) {
+		if (start()) {
 			if (prevStart) {
 				return false;
 			} else {
@@ -277,11 +285,11 @@ public class Xbox extends Joystick {
 	}
 	
 	public double leftX() {
-		return getRawAxis(1);
+		return deadzone(getRawAxis(1));
 	}
 		
 	public double leftY() {
-		return getRawAxis(2);
+		return deadzone(getRawAxis(2));
 	}
 	
 	public double leftTrigger() {
@@ -289,11 +297,11 @@ public class Xbox extends Joystick {
 	}
 	
 	public double rightX() {
-		return getRawAxis(4);
+		return deadzone(getRawAxis(4));
 	}
 	
 	public double rightY() {
-		return getRawAxis(5);
+		return deadzone(getRawAxis(5));
 	}
 	
 	public double rightTrigger() {

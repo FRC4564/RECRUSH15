@@ -13,14 +13,17 @@ import edu.wpi.first.wpilibj.DriverStation;
 
 /**
  *
- * @author Ben, Jacob, Steve
+ * @author Bin, Jacket, Sieve
  */
 public class DriveTrain extends RobotDrive {
     
-    double speed = 0;
-    double accel = 0.25;
+	//Hdrive drive
     SpeedController frontC;
     SpeedController rearC;
+    //Hdrive acceleration curve speeds
+    double driveSpeed = 0;
+    double turnSpeed = 0;
+    double slideSpeed = 0;
 
     // Encoder definitions
     private Encoder encoderFB = new Encoder(Constants.DIO_DRIVE_FB_ENCODER_A, Constants.DIO_DRIVE_FB_ENCODER_B, 
@@ -46,8 +49,7 @@ public class DriveTrain extends RobotDrive {
     private double error = 0;
     private final static double Kp = 0.03;
     private double P = 0;
-    
-    
+    //Drivetrain constructor
     public DriveTrain(SpeedController frontLeft, SpeedController rearLeft, SpeedController frontRight, SpeedController rearRight, 
     		          SpeedController frontCenter, SpeedController rearCenter) {
         super(frontLeft, rearLeft, frontRight, rearRight);
@@ -61,21 +63,51 @@ public class DriveTrain extends RobotDrive {
 		encoderFB.setDistancePerPulse(1.0/COUNTS_PER_INCH_FB);  // Calibrate encoder so that getRate() measures in inches/sec
 		encoderLR.setDistancePerPulse(1.0/COUNTS_PER_INCH_LR);  // Calibrate encoder so that getRate() measures in inches/sec
     }
+    // H DRIVE ACCELCURVE 
     
-    // Set speed based on Y value from joystick and a straight line acceleration curve
-    public double accelCurve(double Y) {
-        if (Math.abs(speed - Y) > accel) {
-            if (speed > Y) {
-                speed = speed - accel;
+    // Set speed based on Y value from left joystick and a straight line acceleration curve
+    // accelCurve to driveAccelCurve
+    public double driveAccelCurve(double target,double driveAccel) {
+        if (Math.abs(driveSpeed - target) > driveAccel) {
+            if (driveSpeed > target) {
+                driveSpeed = driveSpeed - driveAccel;
             } else {
-                speed = speed + accel;
+                driveSpeed = driveSpeed + driveAccel;
             }
         } else {
-            speed = Y;
+            driveSpeed = target;
         }
-        return speed;
+        return driveSpeed;
     }
     
+    // X value from right joystick to slide
+    public double slideAccelCurve(double target, double slideAccel) {
+    	if (Math.abs(slideSpeed - target) > slideAccel) {
+    	    if (slideSpeed > target) {
+                slideSpeed = slideSpeed - slideAccel;
+            } else {
+                slideSpeed = slideSpeed + slideAccel;
+            }
+        } else {
+            slideSpeed = target;
+        }
+        return slideSpeed;
+    }
+    
+    // X value from left joystick to turn
+    public double turnAccelCurve(double target, double turnAccel) {
+    	if (Math.abs(turnSpeed - target) > turnAccel) {
+    		if (turnSpeed > target) {
+    			turnSpeed = turnSpeed - turnAccel;
+    		} else {
+    			turnSpeed = turnSpeed + turnAccel;
+    		}
+    	} else {
+    		turnSpeed = target;
+    	}
+    return turnSpeed;
+	}
+     
     private double deadzone(double input) {
     	if (Math.abs(input) < .2) {
     		return (0);
@@ -100,6 +132,9 @@ public class DriveTrain extends RobotDrive {
     	drive = deadzone(drive);
     	turn = deadzone(turn);
     	slide = deadzone(slide);
+    	drive = driveAccelCurve(drive, 0.25);
+    	turn = turnAccelCurve(turn, 0.25);
+    	slide = slideAccelCurve(slide, 0.25);
     	// if any input is given, snap out of Move state
     	if (drive != 0 || turn != 0 || slide != 0) {
     		moveStateFB = STATE_IDLE;
@@ -118,8 +153,6 @@ public class DriveTrain extends RobotDrive {
     			targetHeading = heading;
     			prevTurn = 0;
     		}
-    		
-    		
     		// Calculate PID
     		error = targetHeading - heading;
     		if (error > 180) {
@@ -168,12 +201,10 @@ public class DriveTrain extends RobotDrive {
     	}
     }
     	
-    		
     public void rotateLeft90() {
     	targetHeading = Math.floor((gyro.getAngle()-2) / 90)*90;
     }
     	
-    
     public void rotateRight90() {
     	targetHeading = Math.floor((gyro.getAngle()+92) / 90)*90;
     }

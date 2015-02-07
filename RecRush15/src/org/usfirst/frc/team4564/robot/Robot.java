@@ -1,19 +1,11 @@
 
 package org.usfirst.frc.team4564.robot;
 
-
-import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.SampleRobot;
-import edu.wpi.first.wpilibj.RobotDrive;
-import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.Victor;
-import edu.wpi.first.wpilibj.Solenoid;
 import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
@@ -36,7 +28,6 @@ public class Robot extends SampleRobot {
     DriveTrain dt;
     Xbox joyLift = new Xbox(0);
     Xbox joyClaw = new Xbox(1);
-    int prevPOV; //POV of dPad debouncing
     Talon fL = new Talon(Constants.PWM_DRIVE_FL);
     Talon rL = new Talon(Constants.PWM_DRIVE_RL);
     Talon fR = new Talon(Constants.PWM_DRIVE_FR);
@@ -46,20 +37,19 @@ public class Robot extends SampleRobot {
     Lift lift = new Lift();
     Claw claw = new Claw();
     Auto auto = new Auto(dt, lift, claw);
-
     //double prefTest;
     //Preferences prefs;
     //Command autoCommand;
     //SendableChooser autoChooser;
+    
     int autoMode=0;
-// Pneumatics Code In Progress
-     
+    
+    // Pneumatics Code In Progress
     Compressor comp = new Compressor();
 
     public Robot() {
         dt = new DriveTrain(fL, rL, fR, rR, fC, rC);
-        dt.setExpiration(0.1);
-        
+        dt.setExpiration(0.1);    
     }
     
     public void robotInit() {
@@ -67,7 +57,6 @@ public class Robot extends SampleRobot {
     	//autoChooser = new SendableChooser();
     	//autoChooser.addDefault("RotateLeft", "Left");
     	//autoChooser.addObject("RotateRight", "Right");
-		
     	//prefTest = prefs.getDouble("VelocityKp", 1.0);
 		//SmartDashboard.putNumber("Prefs Velocity Kp", prefTest);	
     }
@@ -87,14 +76,12 @@ public class Robot extends SampleRobot {
         }
     }
 
-    /**
-     * Drive left & right motors for 2 seconds then stop
-     */
+    //Drive left & right motors for 2 seconds then stop
     public void autonomous() {
         dt.setSafetyEnabled(false);
         //dt.init();
         Auto auto = new Auto(dt, lift, claw);
-        auto.run(1);
+        auto.run();
         //if (autoChooser.getSelected() == "Left") {
         //	dt.rotateLeft90();
         //} else {
@@ -103,9 +90,7 @@ public class Robot extends SampleRobot {
         Timer.delay(2.0);		//    for 2 seconds
     }
 
-   /**
-     * Runs the motors with arcade steering.
-     */
+    //Runs the motors with arcade steering.
     public void operatorControl() {
         dt.setSafetyEnabled(true);  
         dt.init();
@@ -120,42 +105,31 @@ public class Robot extends SampleRobot {
 
         	if (joyLift.leftBumper()) {									// Left bumper to rotate Left
         		dt.rotateLeft90();
-            } else if (stick.getRawButton(6)) {							// Right bumper to rotate right
+            } else if (joyLift.rightBumper()) {							// Right bumper to rotate right
             	dt.rotateRight90();
         	}
         	// Test lift homing function
-        	if(stick.getRawButton(8)) {									// Start button to Initilize to home
+        	if(joyLift.whenStart()) {									// Start button to Initilize to home
         		lift.init();
-        	}
-        	
-        	if(stick.getRawButton(4)) {									// Y-button to go to 50"
-        		dt.gyroReset();
         	}
         	
         	// previously lift.levelGo(3);, using for moveFree test
         	if (lift.isIdle() || lift.isMoving()) {
-        		lift.moveFree(stick.getZ());
+        		lift.moveFree(joyLift.rightY());
         	}
         	
-        	if(stick.getRawButton(3)) {									// X-button to go to 25"
+        	if(joyLift.X()) {									// X-button to go to 25"
         		lift.gotoHeight(25);
         	}
         	
-        	if (stick.getPOV(0) == 0) {
-        		if (prevPOV != 0) { lift.levelUp(); }
-        	} else if (stick.getPOV(0) == 180) {
-        		if (prevPOV != 180) { lift.levelDown(); }
+        	if (joyLift.whenA()) {
+        		if (comp.enabled() == true) {
+        			comp.stop();
+        		} if (comp.enabled() == false) {
+        			comp.start();
+        		}	
         	}
-        	
-        	if (stick.getRawButton(1)) {
-        		comp.start();
-        	}
-        	if (stick.getRawButton(2)) {
-        		comp.stop();
-        	}
-       
-        	prevPOV = stick.getPOV(0);
-        	
+
         	lift.update();
         	/**if(stick.getRawButton(10))
         	{

@@ -6,7 +6,6 @@ public class Countdown {
 
 double startTime;
 double endTime;
-
 public Countdown() {}
 
 	public void set(double seconds) {

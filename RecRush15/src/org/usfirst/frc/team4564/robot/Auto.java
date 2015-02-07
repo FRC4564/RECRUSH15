@@ -11,12 +11,11 @@ public class Auto {
 	private DriveTrain dt;
 	private Lift lift;
 	private Claw claw;
-	
+	//Script Functions
 	private Countdown autoTimer;  //Make sure auto run is no longer than 15 seconds
 	private int selectedPlay = 1;  // Play # from playbook to run, stating at 1
 	ArrayList<String> script = new ArrayList<String>();
 	private ArrayList<ArrayList<String>> playbook = new ArrayList<ArrayList<String>>();
-	
 	// Command processing states
 	private static final int STOPPED = 0;  //No script active
 	private static final int RUNNING = 1;  //Process has begun, awaiting success or fail
@@ -26,14 +25,13 @@ public class Auto {
 	private static final int BADCOMMAND = 5; //Invalid command
 	private int processStatus = STOPPED;
 	private Countdown processTimer = new Countdown();  //Some steps require a timer			
-	
+	// Constructor
 	public Auto (DriveTrain dt, Lift lift, Claw claw) {
 		this.dt = dt;
 		this.lift = lift;
 		this.claw = claw;
-	
 
-		//Script 1
+		//Script 1 All totes.
 		script.add("driveInit");
 		script.add("driveForward 12");
 		script.add("driveWait 5");
@@ -41,15 +39,21 @@ public class Auto {
 		script.add("driveWait 5");
 		playbook.add(new ArrayList<String>(script));
 		script.clear();
-		//Script 2
+		//Script 2 Our tote.
 		script.add("liftInit");
 		script.add("liftWait 5");
 		script.add("level 2");
 		script.add("liftWait 5");
 		playbook.add(new ArrayList<String>(script));
 		script.clear();
-		
-		
+		//Script 3 Our bin.
+		//Script 4 Our bin and tote.
+		//Script 5 Go to autozone.
+		//Script 6 Our tote and right neighbor tote  (left starting postion).
+		//Script 7 Our tote and right neighbor tote  (Middle starting postion).
+		//Script 8 Our tote and left neighbor tote  (Right starting postion).
+		//Script 9 Our tote and left neighbor tote  (Middle starting postion).
+		//Script 10 Custom auto script.
 	}
 	
 	// Increment the playbook selected play number, restricting to size of playbook
@@ -102,14 +106,12 @@ public class Auto {
 			lift.update();
 			claw.update();
 			Timer.delay(2);
-
 		}
 	}
 	
 	private int runStep(String step) {
 		String command;
 		double parameter;
-		
 		command = step.split(" ")[0];
 		command = command.toUpperCase();
 		if (step.indexOf(" ") > 0) {
