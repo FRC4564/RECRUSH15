@@ -63,6 +63,7 @@ public class Lift {
 	public void init() {
 		liftState = LIFT_INIT;
 		encoder.setDistancePerPulse(1.0/COUNTS_PER_INCH);  // Calibrate encoder so that getRate() measures in inches/sec
+		Common.debug("Starting: Lift init");
 	}
 
 	// Move lift at specified power level.  Positive values move lift up.
@@ -157,6 +158,7 @@ public class Lift {
 		if (liftState == LIFT_IDLE || liftState == LIFT_MOVING) {
 			targetPIDHeight = inches;
 			liftState = LIFT_MOVING;
+			Common.debug("Go to height =" + targetPIDHeight);
 		}
 	}
 
@@ -176,16 +178,19 @@ public class Lift {
 		} else if (targetLevel < 0) {
 			targetLevel = 0;
 		}
+		Common.debug("Target level = " + targetLevel);
 		gotoHeight(levelToInches(targetLevel));
 	}
 	
 	// Move lift up one level
 	public void levelUp(){
+		Common.debug("Level up");
 		gotoLevel(targetLevel + 1);
 	}
 	
 	// Move lift down one level
 	public void levelDown(){
+		Common.debug("Level down");
 		gotoLevel(targetLevel - 1);
 	}
 		
@@ -199,6 +204,7 @@ public class Lift {
 			setMotor(0);
 			encoder.reset();
 			liftState = LIFT_IDLE;
+			Common.debug("Ending: Lift init");
 		} 
 	}
 

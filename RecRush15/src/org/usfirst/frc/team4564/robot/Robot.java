@@ -63,17 +63,21 @@ public class Robot extends SampleRobot {
     
     // Robot is disabled.  Allow adjust of settings.
     public void disabled() {
+    	Common.debug("Starting: disabled mode");
         while (isEnabled() == false) {
         	if (joyLift.whenDpadUp()) {
+        		Common.debug("Incrementing play number");
         		auto.nextPlay();
         	}
         	
         	if (joyLift.whenDpadDown()) {
+        		Common.debug("Decrementing play number");
         		 auto.prevPlay();
         	}
         	SmartDashboard.putNumber("Play #", auto.getPlay());
         	Timer.delay(Constants.REFRESH_RATE);
-        }
+        } 
+        Common.debug("Ending: disabled mode");
     }
 
     //Drive left & right motors for 2 seconds then stop
@@ -92,16 +96,24 @@ public class Robot extends SampleRobot {
 
     //Runs the motors with arcade steering.
     public void operatorControl() {
+    	Common.debug("Starting: teleop");
         dt.setSafetyEnabled(true);  
+        Common.debug("Starting: dt.init");
         dt.init();
-        Timer.delay(1);
+        Common.debug("Starting: compressor");
         comp.start();
         while (isOperatorControl() && isEnabled()) {
         	if (joyLift.A()) {							    // Left thumbstick click to do Translate drive
         		dt.translateDrive(joyLift.leftY(), joyLift.leftX());
         	} else {
-        		dt.hDrive(joyLift.leftY(), joyLift.leftX(), 0);               // Drive with arcade style using left stick by default
+        		dt.hDrive(joyLift.leftY(), joyLift.leftX(), joyLift.rightX());               // Drive with arcade style using left stick by default
         	}
+        	SmartDashboard.putNumber("leftX",joyLift.leftX());
+        	SmartDashboard.putNumber("leftY",joyLift.leftY());
+        	SmartDashboard.putNumber("rightX",joyLift.rightX());
+        	SmartDashboard.putNumber("rightY",joyLift.rightY());
+        	SmartDashboard.putNumber("leftTrigger",joyLift.leftTrigger());
+        	SmartDashboard.putNumber("rightTrigger",joyLift.rightTrigger());
 
         	if (joyLift.leftBumper()) {									// Left bumper to rotate Left
         		dt.rotateLeft90();
@@ -118,11 +130,7 @@ public class Robot extends SampleRobot {
         		lift.moveFree(joyLift.rightY());
         	}
         	
-        	if(joyLift.X()) {									// X-button to go to 25"
-        		lift.gotoHeight(25);
-        	}
-        	
-        	if (joyLift.whenA()) {
+        	if (joyLift.whenY()) {
         		if (comp.enabled() == true) {
         			comp.stop();
         		} if (comp.enabled() == false) {
@@ -131,6 +139,7 @@ public class Robot extends SampleRobot {
         	}
 
         	lift.update();
+        	claw.update();
         	/**if(stick.getRawButton(10))
         	{
         		valve1.set(true);
@@ -161,7 +170,8 @@ public class Robot extends SampleRobot {
         	//}
        
             Timer.delay(1.0 / Constants.REFRESH_RATE);		// wait before repeating main update loop
-        }
+        } 
+        Common.debug("Ending: teleop");
     }
 
     /**

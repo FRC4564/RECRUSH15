@@ -285,15 +285,19 @@ public class Xbox extends Joystick {
 	}
 	
 	public double leftX() {
-		return deadzone(getRawAxis(1));
+		return deadzone(getRawAxis(0));
 	}
 		
 	public double leftY() {
-		return deadzone(getRawAxis(2));
+		return deadzone(getRawAxis(1));
 	}
 	
 	public double leftTrigger() {
-		return getRawAxis(3);
+		return getRawAxis(2);
+	}
+	
+	public double rightTrigger() {
+		return getRawAxis(3);	
 	}
 	
 	public double rightX() {
@@ -304,8 +308,6 @@ public class Xbox extends Joystick {
 		return deadzone(getRawAxis(5));
 	}
 	
-	public double rightTrigger() {
-		return getRawAxis(6);	
-	}
+
 	
 }

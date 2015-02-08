@@ -30,6 +30,10 @@ public class Common {
 		}
 		return value;
 	}
+	
+	public static void debug(String a) {
+		System.out.println(System.currentTimeMillis()+": "+a);
+	}
 }
 
 
