@@ -56,7 +56,7 @@ public class DriveTrain extends RobotDrive {
         setInvertedMotor(RobotDrive.MotorType.kFrontLeft,true);
         setInvertedMotor(RobotDrive.MotorType.kRearLeft,true);
         setInvertedMotor(RobotDrive.MotorType.kFrontRight,true);
-        setInvertedMotor(RobotDrive.MotorType.kRearRight,false);
+        setInvertedMotor(RobotDrive.MotorType.kRearRight,true);
         frontC = frontCenter;
         rearC = rearCenter;
         // Set encoder for distance measuring so the getDistance() can be used.
@@ -237,6 +237,7 @@ public class DriveTrain extends RobotDrive {
     		SmartDashboard.putNumber("moveSpeed", moveSpeed );
     		SmartDashboard.putNumber("moveTarget", moveTargetFB );
     		SmartDashboard.putNumber("encoder", encoderFB.get() );
+   
 
 		} else {
 			moveStateFB = STATE_IDLE;
