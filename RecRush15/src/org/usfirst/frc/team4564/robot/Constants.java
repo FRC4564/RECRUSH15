@@ -25,10 +25,12 @@ public class Constants {
 	public static final int PWM_LIFT_MOTOR = 7;
 	public static final int PWM_CARRIAGE_MOTOR = 8;
 	//Solenoids
-	public static final int SOL_MAST = 0;
-	public static final int SOL_FOREBAR_UP = 1;
-	public static final int SOL_FOREBAR_DOWN = 2;
-	public static final int SOL_HAND = 3;
+	public static final int SOL_MAST = 4;
+	public static final int SOL_HAND = 5;
+	public static final int SOL_FOREBAR_DOWN = 6;
+	public static final int SOL_FOREBAR_UP = 7;
+	
+	
 	//MISCELLANEOUS
 	public static final double REFRESH_RATE = 100;  //Refresh rate for main loop and all related subsystem updates
 	

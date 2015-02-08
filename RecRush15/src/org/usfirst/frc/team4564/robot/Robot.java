@@ -48,12 +48,15 @@ public class Robot extends SampleRobot {
     Compressor comp = new Compressor();
 
     public Robot() {
+    	Common.debug("Constructing drive train");
         dt = new DriveTrain(fL, rL, fR, rR, fC, rC);
+        dt.setSafetyEnabled(false);
         dt.setExpiration(0.1);    
     }
     
     public void robotInit() {
     	comp.stop();
+    	claw.init();
     	//autoChooser = new SendableChooser();
     	//autoChooser.addDefault("RotateLeft", "Left");
     	//autoChooser.addObject("RotateRight", "Right");
@@ -74,18 +77,19 @@ public class Robot extends SampleRobot {
         		Common.debug("Decrementing play number");
         		 auto.prevPlay();
         	}
-        	SmartDashboard.putNumber("Play #", auto.getPlay());
-        	Timer.delay(Constants.REFRESH_RATE);
+//        	SmartDashboard.putNumber("Play #", auto.getPlay());
+        	Timer.delay(.1);
         } 
         Common.debug("Ending: disabled mode");
     }
+    
 
     //Drive left & right motors for 2 seconds then stop
     public void autonomous() {
         dt.setSafetyEnabled(false);
         //dt.init();
-        Auto auto = new Auto(dt, lift, claw);
-        auto.run();
+//        Auto auto = new Auto(dt, lift, claw);
+//        auto.run();
         //if (autoChooser.getSelected() == "Left") {
         //	dt.rotateLeft90();
         //} else {
@@ -121,8 +125,16 @@ public class Robot extends SampleRobot {
             	dt.rotateRight90();
         	}
         	// Test lift homing function
-        	if(joyLift.whenStart()) {									// Start button to Initilize to home
+        	if (joyLift.whenStart()) {									// Start button to Initilize to home
         		lift.init();
+        	}
+        	
+        	if (joyLift.whenDpadUp()) {
+        		lift.levelUp();
+        	}
+        	
+        	if (joyLift.whenDpadDown()) {
+        		lift.levelDown();
         	}
         	
         	// previously lift.levelGo(3);, using for moveFree test
@@ -130,14 +142,33 @@ public class Robot extends SampleRobot {
         		lift.moveFree(joyLift.rightY());
         	}
         	
-        	if (joyLift.whenY()) {
+        	if (joyLift.whenSelect()) {
         		if (comp.enabled() == true) {
         			comp.stop();
         		} if (comp.enabled() == false) {
         			comp.start();
         		}	
         	}
-
+        	
+        	// Release the tote
+        	if (joyLift.whenRightClick()) {
+        		lift.releaseTote();
+        	}
+        	
+        	// Forebar control
+        	if (joyLift.X()) {
+        		claw.forebarUp();
+        	} else if (joyLift.Y()) {
+        		claw.forbarDown();
+        	} else {
+        		claw.forebarStop();
+        	}
+        	
+        	//mast control
+        	
+        	if (joyLift.whenDpadLeft()) {
+        			claw.mastToggle();        		
+        	}
         	lift.update();
         	claw.update();
         	/**if(stick.getRawButton(10))

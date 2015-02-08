@@ -17,19 +17,19 @@ public class Lift {
 	private static final int LIFT_IDLE = 2;     //Not moving, initialized and ready to move
 	private static final int LIFT_MOVING = 3;   //Moving
 	//Physical dimensions
-    private static final double LIFT_MIN_HEIGHT = 4;   // Inches from bottom of lift arm to floor when lift is at its lower limit.
+    private static final double LIFT_MIN_HEIGHT = 10.3;   // Inches from top of lift arm to floor when lift is at its lower limit.
     private static final double LIFT_MAX = 70;  // Inches from bottom of lift arm to floor when lift is at its upper limit.
     private static final double PLATFORM = 2;   // Height of the field scoring platform
-    private static final double TOTE_TOTAL = 12.1; // Dimensional height of a tote
+    private static final double TOTE_HEIGHT = 12.1; // Dimensional height of a tote
     private static final double TOTE_STACKED = 11.875;  // When interlocked, additional height of a stacked tote
-    private static final double TOTE_LIP = 0.5;    // Dimensional height of the totes lip (ie. upper edge)
-    private static final double ARM_HEIGHT = 5;	// Dimensional height of the arm
+    private static final double TOTE_LIP = 1.0;    // Dimensional height of the totes lip (ie. upper edge)
+    private static final double ARM_HEIGHT = 6;	// Dimensional height of the arm
     //Reference measurements
     private static final double LIFT_CLEARANCE = PLATFORM + 1;  // Desired clearance between bottom of tote and floor (Lift Level 1)
-    private static final double RELEASE_CLEARANCE = 3; // Distance to move down from top of tote to release it 
-    private static final double LIFT_LEVEL0 = TOTE_TOTAL - ARM_HEIGHT - RELEASE_CLEARANCE - LIFT_MIN_HEIGHT; // Arm below single tote (ie released)
-    private static final double LIFT_LEVEL1 = TOTE_TOTAL - ARM_HEIGHT + LIFT_CLEARANCE - LIFT_MIN_HEIGHT;  // Lift height for carrying a tote with clearance
-    private static final double LIFT_LEVEL2 = TOTE_TOTAL + LIFT_LEVEL1;  // Lift height to get level 2 (Provides clearance above 1 tote)
+    private static final double RELEASE_CLEARANCE = 4; // Distance to move down from top of tote to release it 
+    private static final double LIFT_LEVEL0 = TOTE_HEIGHT - TOTE_LIP; // Drag totes at ground level
+    private static final double LIFT_LEVEL1 = TOTE_HEIGHT + LIFT_CLEARANCE;  // Lift height for carrying a tote with clearance
+    private static final double LIFT_LEVEL2 = TOTE_HEIGHT + LIFT_LEVEL1;  // Lift height to get above one tote with clearance
     private static final int MAX_LEVEL = 6; // Highest level lift can reach.
 
     //PID constants and variables
@@ -47,7 +47,7 @@ public class Lift {
     private double prevPIDHeightError = 0.0;            //Used for PID derivative
     // Encoder, Motor, Limit switch constants
 	private static final double COUNTS_PER_INCH = 56;  //encoder counts per inch of lift movement
-    private static final double TOLERANCE = 0.5;        //allowable inch tolerance between target and encoder for positional alignment
+    private static final double TOLERANCE = 0.25;        //allowable inch tolerance between target and encoder for positional alignment
 	private static final boolean MOTOR_INVERT = true;  // inverted means positive motor values move down
 	private static final double MOTOR_INIT_SPEED = -0.25;  //speed to move lift when finding home position
 	private static final boolean LOWER_LIMIT_PRESSED = false;  //Value of limit switch when presse
@@ -84,7 +84,7 @@ public class Lift {
 		liftMotor.set(power);
 	}
 	
-	// Return lift height in inches above floor as measured from bottom of arm
+	// Return lift height in inches above floor as measured from top of the lifting point
 	public double getHeight() {
 		return encoder.getDistance() + LIFT_MIN_HEIGHT;	
 	}
@@ -127,8 +127,8 @@ public class Lift {
 	}
 	
 	// Returns lift Level given a height in inches
-	// Rounds up to nearest level.
-	private int inchesToLevel(double inches) {
+	// Rounds up to nearest level.  Use if lift is moving upward
+	private int upwardLevelCalc(double inches) {
 		if (inches <= LIFT_LEVEL0) {
 			return 0;
 		} else if (inches <= LIFT_LEVEL1) {
@@ -137,6 +137,19 @@ public class Lift {
 			return 2;
 		} else {
 			return (int) ((inches - LIFT_LEVEL2) / TOTE_STACKED) + 2;
+		}
+	}
+	
+	// Returns lift Level given a height in inches
+	// Rounds down to nearest level.  Use if lift is moving upward
+		
+	private int downwardLevelCalc(double inches) {
+		if (inches <= LIFT_LEVEL1 - RELEASE_CLEARANCE) {
+			return 0;
+		} else if (inches <= LIFT_LEVEL2 - RELEASE_CLEARANCE) {
+				return 1;
+		} else {
+			return (int) ((inches - LIFT_LEVEL2 + RELEASE_CLEARANCE) / TOTE_STACKED) + 2;
 		}
 	}
 		
@@ -158,7 +171,6 @@ public class Lift {
 		if (liftState == LIFT_IDLE || liftState == LIFT_MOVING) {
 			targetPIDHeight = inches;
 			liftState = LIFT_MOVING;
-			Common.debug("Go to height =" + targetPIDHeight);
 		}
 	}
 
@@ -194,6 +206,13 @@ public class Lift {
 		gotoLevel(targetLevel - 1);
 	}
 		
+	// Move down below nearest level to release the tote.
+	public void releaseTote() {
+		double releasePoint;
+		releasePoint = levelToInches(downwardLevelCalc(getHeight())) - RELEASE_CLEARANCE;
+		gotoHeight(releasePoint);
+	}
+	
 	// Find home by moving down slowly until limit switch is hit
 	private void updateInit() {
 		// Move to lower limit switch
@@ -237,6 +256,8 @@ public class Lift {
 		SmartDashboard.putNumber("Target height", targetPIDHeight);
 		SmartDashboard.putNumber("Target velocity", targetPIDVelocity);		
 		SmartDashboard.putNumber("Target Level", targetLevel);		
+
+		
 		
 	}
 	// Is lift idle - Idle means lift is initialized and ready for a move request.
