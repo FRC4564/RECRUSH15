@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /**
- * This is a demo program showing the use of the RobotDrive class.
  * The SampleRobot class is the base of a robot application that will automatically call your
  * Autonomous and OperatorControl methods at the right time as controlled by the switches on
  * the driver station or the field controls.
@@ -20,51 +19,33 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * creating this project, you must also update the manifest file in the resource
  * directory.
  *
- * WARNING: While it may look like a good choice to use for your code if you're inexperienced,
- * don't. Unless you know what you are doing, complex code will be much more difficult under
- * this system. Use IterativeRobot or Command-Based instead if you're new.
  */
 public class Robot extends SampleRobot {
     DriveTrain dt;
     Xbox joyLift = new Xbox(0);
     Xbox joyClaw = new Xbox(1);
-    Talon fL = new Talon(Constants.PWM_DRIVE_FL);
-    Talon rL = new Talon(Constants.PWM_DRIVE_RL);
-    Talon fR = new Talon(Constants.PWM_DRIVE_FR);
-    Talon rR = new Talon(Constants.PWM_DRIVE_RR);
-    Victor fC = new Victor(Constants.PWM_DRIVE_FC);
-    Victor rC = new Victor(Constants.PWM_DRIVE_RC);  
+    Compressor comp = new Compressor();
     Lift lift = new Lift();
     Claw claw = new Claw();
     Auto auto = new Auto(dt, lift, claw);
-    //double prefTest;
-    //Preferences prefs;
-    //Command autoCommand;
-    //SendableChooser autoChooser;
-    
-    int autoMode=0;
-    
-    // Pneumatics Code In Progress
-    Compressor comp = new Compressor();
 
     public Robot() {
     	Common.debug("Constructing drive train");
-        dt = new DriveTrain(fL, rL, fR, rR, fC, rC);
-        dt.setSafetyEnabled(false);
+        dt = new DriveTrain();
+        dt.setSafetyEnabled(false);  //Safety will be enabled for TeleOp
         dt.setExpiration(0.1);    
     }
     
+    // ROBOTINIT
+    // Runs once, after robot is booted
     public void robotInit() {
+    	Common.debug("Starting: robotInit()");
     	comp.stop();
-    	claw.init();
-    	//autoChooser = new SendableChooser();
-    	//autoChooser.addDefault("RotateLeft", "Left");
-    	//autoChooser.addObject("RotateRight", "Right");
-    	//prefTest = prefs.getDouble("VelocityKp", 1.0);
-		//SmartDashboard.putNumber("Prefs Velocity Kp", prefTest);	
+        dt.init();
     }
     
-    // Robot is disabled.  Allow adjust of settings.
+    // DISABLED MODE
+    // Robot is disabled.  Allow selection of Auto play mode.
     public void disabled() {
     	Common.debug("Starting: disabled mode");
         while (isEnabled() == false) {
@@ -84,65 +65,52 @@ public class Robot extends SampleRobot {
     }
     
 
-    //Drive left & right motors for 2 seconds then stop
+    // AUTONOMOUS MODE
     public void autonomous() {
         dt.setSafetyEnabled(false);
-        //dt.init();
 //        Auto auto = new Auto(dt, lift, claw);
 //        auto.run();
-        //if (autoChooser.getSelected() == "Left") {
-        //	dt.rotateLeft90();
-        //} else {
-        //	dt.rotateRight90();
-        //}
-        Timer.delay(2.0);		//    for 2 seconds
     }
 
-    //Runs the motors with arcade steering.
+
+    // TELEOP MODE
     public void operatorControl() {
     	Common.debug("Starting: teleop");
         dt.setSafetyEnabled(true);  
-        Common.debug("Starting: dt.init");
-        dt.init();
-        Common.debug("Starting: compressor");
-        comp.start();
         while (isOperatorControl() && isEnabled()) {
-        	if (joyLift.A()) {							    // Left thumbstick click to do Translate drive
-        		dt.translateDrive(joyLift.leftY(), joyLift.leftX());
-        	} else {
-        		dt.hDrive(joyLift.leftY(), joyLift.leftX(), joyLift.rightX());               // Drive with arcade style using left stick by default
-        	}
-        	SmartDashboard.putNumber("leftX",joyLift.leftX());
-        	SmartDashboard.putNumber("leftY",joyLift.leftY());
-        	SmartDashboard.putNumber("rightX",joyLift.rightX());
-        	SmartDashboard.putNumber("rightY",joyLift.rightY());
-        	SmartDashboard.putNumber("leftTrigger",joyLift.leftTrigger());
-        	SmartDashboard.putNumber("rightTrigger",joyLift.rightTrigger());
+        	// DRIVE TRAIN
+       		dt.hDrive(joyLift.leftY(), joyLift.leftX(), joyLift.rightX());	// Drive with arcade style using left stick by default
 
-        	if (joyLift.leftBumper()) {									// Left bumper to rotate Left
+        	if (joyLift.leftBumper()) {					// Left bumper to rotate Left
         		dt.rotateLeft90();
-            } else if (joyLift.rightBumper()) {							// Right bumper to rotate right
+            } else if (joyLift.rightBumper()) {			// Right bumper to rotate right
             	dt.rotateRight90();
         	}
-        	// Test lift homing function
-        	if (joyLift.whenStart()) {									// Start button to Initilize to home
+        	
+        	// LIFT
+        	if (joyLift.whenStart()) {					// Start button to initilize lift and claw
         		lift.init();
+        		claw.init();
         	}
         	
-        	if (joyLift.whenDpadUp()) {
+        	if (joyLift.whenDpadUp()) {					// Level up
         		lift.levelUp();
         	}
         	
-        	if (joyLift.whenDpadDown()) {
+        	if (joyLift.whenDpadDown()) {				// Level down
         		lift.levelDown();
         	}
         	
-        	// previously lift.levelGo(3);, using for moveFree test
-        	if (lift.isIdle() || lift.isMoving()) {
+        	if (joyLift.whenRightClick()) {        		// Release the tote
+        		lift.releaseTote();
+        	}
+        	
+        	if (lift.isIdle() || lift.isMoving()) {		// Move lift freely, if ready for movement
         		lift.moveFree(joyLift.rightY());
         	}
         	
-        	if (joyLift.whenSelect()) {
+        	// COMPRESSOR
+        	if (joyLift.whenSelect()) {					// Toggle compressor
         		if (comp.enabled() == true) {
         			comp.stop();
         		} if (comp.enabled() == false) {
@@ -150,13 +118,8 @@ public class Robot extends SampleRobot {
         		}	
         	}
         	
-        	// Release the tote
-        	if (joyLift.whenRightClick()) {
-        		lift.releaseTote();
-        	}
-        	
-        	// Forebar control
-        	if (joyLift.X()) {
+        	// FOREBAR
+        	if (joyLift.X()) {						// Forebar is tri-state: Up, Down or Stopped
         		claw.forebarUp();
         	} else if (joyLift.Y()) {
         		claw.forbarDown();
@@ -164,42 +127,15 @@ public class Robot extends SampleRobot {
         		claw.forebarStop();
         	}
         	
-        	//mast control
-        	
+        	// MAST
         	if (joyLift.whenDpadLeft()) {
         			claw.mastToggle();        		
         	}
+        	
+        	// UPDATE SUBSYSTEMS
         	lift.update();
         	claw.update();
-        	/**if(stick.getRawButton(10))
-        	{
-        		valve1.set(true);
-        	}
-        	else
-        	{
-        		valve1.set(false);
-        	}
-        	
-        	if(stick.getRawButton(9))
-        	{
-        		valve2.set(true);
-        	}
-        	else
-        	{
-        		valve2.set(false);
-        	}**/
-        	
-        	//if(valveswitch.get()== true) 
-        	//{
-        	//	valve1.set(true);
-        	//	valve2.set(false);
-        	//}
-        	//else {
-        	//	valve1.set(false);
-        	//	valve2.set(true);
-        	//	
-        	//}
-       
+
             Timer.delay(1.0 / Constants.REFRESH_RATE);		// wait before repeating main update loop
         } 
         Common.debug("Ending: teleop");
