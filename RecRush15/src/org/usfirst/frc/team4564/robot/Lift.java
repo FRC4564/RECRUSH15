@@ -251,7 +251,7 @@ public class Lift {
 		}
 		SmartDashboard.putNumber("Lift state", liftState);
 		SmartDashboard.putBoolean("Lower Limit", lowerLimit.get() == LOWER_LIMIT_PRESSED);
-		SmartDashboard.putNumber("Encoder distance",encoder.getDistance());
+		SmartDashboard.putNumber("Lift encoder inches",encoder.getDistance());
 		SmartDashboard.putNumber("Calculated height", getHeight());
 		SmartDashboard.putNumber("Target height", targetPIDHeight);
 		SmartDashboard.putNumber("Target velocity", targetPIDVelocity);		
@@ -267,6 +267,6 @@ public class Lift {
 	
 	// Is lift moving? 
 	public boolean isMoving() {
-		return liftState == LIFT_IDLE;
+		return liftState == LIFT_MOVING;
 	}
 }
