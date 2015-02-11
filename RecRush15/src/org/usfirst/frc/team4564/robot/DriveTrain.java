@@ -5,6 +5,7 @@ import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Gyro;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.SpeedController;
+import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -18,12 +19,12 @@ import edu.wpi.first.wpilibj.DriverStation;
 public class DriveTrain extends RobotDrive {
     
 	//Hdrive drive motors
-	Talon frontL = new Talon(Constants.PWM_DRIVE_FL);
-    Talon rearL = new Talon(Constants.PWM_DRIVE_RL);
-    Talon frontR = new Talon(Constants.PWM_DRIVE_FR);
-    Talon rearR = new Talon(Constants.PWM_DRIVE_RR);
-    Talon frontC = new Victor(Constants.PWM_DRIVE_FC);
-    Talon rearC = new Victor(Constants.PWM_DRIVE_RC);  
+	static Talon frontL = new Talon(Constants.PWM_DRIVE_FL);
+    static Talon rearL = new Talon(Constants.PWM_DRIVE_RL);
+    static Talon frontR = new Talon(Constants.PWM_DRIVE_FR);
+    static Talon rearR = new Talon(Constants.PWM_DRIVE_RR);
+    Talon frontC = new Talon(Constants.PWM_DRIVE_FC);
+    Talon rearC = new Talon(Constants.PWM_DRIVE_RC);  
     //Hdrive acceleration curve speeds
     double driveSpeed = 0;
     double turnSpeed = 0;
@@ -43,12 +44,12 @@ public class DriveTrain extends RobotDrive {
     private static final double MIN_SPEED_FB = 0.1; 	//Min motor power
     private static final double MIN_SPEED_LR = 0.1; 	//Min motor power
     private static final double MIN_SPEED_TURN = 0.1;	//Min motor power
-    private static final double MAX_SPEED_FB = 1.0;		//Max motor power
-    private static final double MAX_SPEED_LR = 1.0;		//Max motor power
+    private static final double MAX_SPEED_FB = 0.75;		//Max motor power
+    private static final double MAX_SPEED_LR = 0.75;		//Max motor power
     private static final double MAX_SPEED_TURN = 0.5;	//Max motor power
-    private static final int TOLERANCE_LR = 0.5; // allowable tolerance between target and encoder in inches
-    private static final int TOLERANCE_FB = 0.5; // allowable tolerance between target and encoder in inches
-    private static final int TOLERANCE_TURN = 1; // allowable tolerance between target and encoder in degrees
+    private static final double TOLERANCE_LR = 0.5; // allowable tolerance between target and encoder in inches
+    private static final double TOLERANCE_FB = 0.5; // allowable tolerance between target and encoder in inches
+    private static final double TOLERANCE_TURN = 1; // allowable tolerance between target and encoder in degrees
     private static final int STATE_IDLE = 0;   // Both FB and LR PIDs are disabled.  Heading hold is still active.
     private static final int STATE_MOVING = 1; // Movement in progress to reach target 
     private double moveTargetFB = 0;  // Forward/Backward target distance relative to current encoder distance
@@ -244,7 +245,7 @@ public class DriveTrain extends RobotDrive {
 		// Are we there yet?
 		if (Math.abs(error) > TOLERANCE_FB) {
 			P = error * Kp_FB;
-			moveSpeed = Common.constrain(P,MIN_SPEED_FB,MAX_SPEED_FB)
+			moveSpeed = Common.constrain(P,MIN_SPEED_FB,MAX_SPEED_FB);
 		} else {
 			moveStateFB = STATE_IDLE;
 			moveSpeed = 0;
@@ -252,7 +253,7 @@ public class DriveTrain extends RobotDrive {
 		SmartDashboard.putNumber("moveSpeedFB", moveSpeed );
 		SmartDashboard.putNumber("moveTargetFB", moveTargetFB );
 		SmartDashboard.putNumber("encoderFB inches", encoderFB.getDistance() );
-		return -movespeed;  //Invert required since negative values drive forward.
+		return -moveSpeed;  //Invert required since negative values drive forward.
 	}
     
     // Calcualte PID movement for Left/Right distance moves
@@ -265,7 +266,7 @@ public class DriveTrain extends RobotDrive {
 		// Are we there yet?
 		if (Math.abs(error) > TOLERANCE_LR) {
 			P = error * Kp_LR;
-			moveSpeed = Common.constrain(P,MIN_SPEED_LR,MAX_SPEED_LR)
+			moveSpeed = Common.constrain(P,MIN_SPEED_LR,MAX_SPEED_LR);
 		} else {
 			moveStateLR = STATE_IDLE;
 			moveSpeed = 0;
@@ -273,7 +274,7 @@ public class DriveTrain extends RobotDrive {
 		SmartDashboard.putNumber("moveSpeedLR", moveSpeed );
 		SmartDashboard.putNumber("moveTargetLR", moveTargetLR );
 		SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
-		return moveSpeed
+		return moveSpeed;
 	}
     
     public void moveForward(double inches) {
@@ -291,7 +292,7 @@ public class DriveTrain extends RobotDrive {
     	moveStateLR = STATE_MOVING;
     }
     
-    public void moveRight(double inches) {
+    public void moveLeft(double inches) {
     	moveTargetLR = encoderLR.getDistance() - inches;
     	moveStateLR = STATE_MOVING;
     }
@@ -307,6 +308,6 @@ public class DriveTrain extends RobotDrive {
     }
     
     public boolean isIdle(){
-    	return (stateTurn == STATE_IDLE && stateMoveFB == STATE_IDLE && stateMoveLR == STATE_IDLE);
+    	return (turnState == STATE_IDLE && moveStateFB == STATE_IDLE && moveStateLR == STATE_IDLE);
     }
 }

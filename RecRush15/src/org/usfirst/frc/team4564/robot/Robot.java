@@ -89,6 +89,7 @@ public class Robot extends SampleRobot {
         	
         	// LIFT
         	if (joyLift.whenStart()) {					// Start button to initilize lift and claw
+        		Common.debug("Initializing Lift and Claw");
         		lift.init();
         		claw.init();
         	}
