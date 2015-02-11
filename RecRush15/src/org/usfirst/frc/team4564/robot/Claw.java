@@ -20,14 +20,14 @@ public class Claw {
 	private DigitalInput carriageLimit = new DigitalInput(Constants.DIO_CARRIAGE_TOP);  //At top of mast
 	private Encoder encoder = new Encoder(Constants.DIO_CARRIAGE_ENCODER_A, Constants.DIO_CARRIAGE_ENCODER_B,
 				  true, EncodingType.k4X);  // Encoder should count positive values as carriage moves down
-	private static final boolean CARRIAGE_LIMIT_PRESSED = false;  //Value of limit switch when pressed.
+	private static final boolean CARRIAGE_LIMIT_PRESSED = true;  //Value of limit switch when pressed.
 	private static final double CARRIAGE_LOW = 5;    //Inches carriage is above floor when at its lowest point
 	private static final double CARRIAGE_HIGH = 65;  //Inches carriage is above floor when at its highest point
-	private static final double CARRIAGE_COUNTS_PER_INCH = 56.21002386634845;   //Encoder ticks per inch of carriage movement
+	private static final double CARRIAGE_COUNTS_PER_INCH = 70.09174311;   //Encoder ticks per inch of carriage movement
 	// PID Carriage
 	private static final double HEIGHT_Kp = 3.0;
     private static final double HEIGHT_Kd = 0.1;
-    private static final double SPEED_Kp = 0.002;
+    private static final double SPEED_Kp = 0.02;
     private static final double SPEED_Kd = 0.000;
     private double targetPIDHeight = CARRIAGE_HIGH;  //Carriage's home position
 	private double prevPIDHeightError = 0.0;
@@ -71,6 +71,7 @@ public class Claw {
 	private static final boolean HAND_SOL_OPEN = true;			//Solenoid value to open the hand
 	private static final boolean HAND_SOL_CLOSE = ! HAND_SOL_OPEN;  //Solenoid value to close the hand
 	
+	// Initiate carriage move to home position
 	public void init() {
 		carriageState = CARRIAGE_INIT;
 		encoder.setDistancePerPulse(1.0/CARRIAGE_COUNTS_PER_INCH);  // Calibrate encoder to inches of travel
@@ -147,24 +148,26 @@ public class Claw {
 	private void PIDSpeed() {
 		double error, power, P, D;
 		// Calculate PID
-		error = targetPIDSpeed - encoder.getRate();
-		P = error * SPEED_Kp;
-		D = (error - prevPIDSpeedError) / (1.0 / Constants.REFRESH_RATE) * SPEED_Kd;
-		prevPIDSpeedError = error;
-		//
-		power = P + D + prevPIDSpeedPower;
-		if (power > MOTOR_MAX_POWER) {
-			power = MOTOR_MAX_POWER;
-		} else if (power < -MOTOR_MAX_POWER) {
-			power = -MOTOR_MAX_POWER;
+		if (carriageState != CARRIAGE_STOPPED) {
+			error = targetPIDSpeed - encoder.getRate();
+			P = error * SPEED_Kp;
+			D = (error - prevPIDSpeedError) / (1.0 / Constants.REFRESH_RATE) * SPEED_Kd;
+			prevPIDSpeedError = error;
+			//
+			power = P + D + prevPIDSpeedPower;
+			if (power > MOTOR_MAX_POWER) {
+				power = MOTOR_MAX_POWER;
+			} else if (power < -MOTOR_MAX_POWER) {
+				power = -MOTOR_MAX_POWER;
+			}
+			setMotor(power);
+			prevPIDSpeedPower = power;
 		}
-		setMotor(power);
-		prevPIDSpeedPower = power;
 	}
 	
 	private void PIDHeight() {
 	    double error, speed, P, D;
-	    if (carriageState == CARRIAGE_IDLE || carriageState == CARRIAGE_MOVING) { //Move to target as long as Init has been done
+	    if (carriageState > CARRIAGE_IDLE) { //Move to target as long as Init has been done
 			// Calculate PID
 			error = targetPIDHeight - carriageHeight();  // Targeted height from floor versus current carriage position  
 			P = error * HEIGHT_Kp;
@@ -218,10 +221,27 @@ public class Claw {
 		}
 	}
 }
+	
+	// Move carriage upward until limit switch and then set to Idle state
+	private void carriageInit() {
+		if (carriageLimit.get() == CARRIAGE_LIMIT_PRESSED) {
+			targetPIDSpeed = 0;
+			carriageState = CARRIAGE_IDLE;
+			encoder.reset();
+		} else {
+			targetPIDSpeed = -6;
+		}
+	}
+	
 	// Call update method every refresh cycle to update carriage and wrist movement
 	public void update() {
-		PIDHeight();
-		PIDSpeed();
+		if (carriageState == CARRIAGE_INIT) {
+			carriageInit();
+			PIDSpeed();
+		} else if (carriageState != CARRIAGE_STOPPED) {
+			PIDHeight();
+			PIDSpeed();
+		}
 		wristUpdate();
 		SmartDashboard.putNumber("Carriage Distance", encoder.getDistance());
 		SmartDashboard.putNumber("Carriage Encoder", encoder.get());

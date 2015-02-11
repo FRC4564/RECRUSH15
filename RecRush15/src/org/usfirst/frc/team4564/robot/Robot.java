@@ -2,9 +2,7 @@
 package org.usfirst.frc.team4564.robot;
 
 import edu.wpi.first.wpilibj.SampleRobot;
-import edu.wpi.first.wpilibj.Talon;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -22,8 +20,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends SampleRobot {
     DriveTrain dt;
-    Xbox joyLift = new Xbox(0);
-    Xbox joyClaw = new Xbox(1);
+    Xbox joyTote = new Xbox(0);
+    Xbox joyBin = new Xbox(1);
     Compressor comp = new Compressor();
     Lift lift = new Lift();
     Claw claw = new Claw();
@@ -49,12 +47,12 @@ public class Robot extends SampleRobot {
     public void disabled() {
     	Common.debug("Starting: disabled mode");
         while (isEnabled() == false) {
-        	if (joyLift.whenDpadUp()) {
+        	if (joyTote.whenDpadUp()) {
         		Common.debug("Incrementing play number");
         		auto.nextPlay();
         	}
         	
-        	if (joyLift.whenDpadDown()) {
+        	if (joyTote.whenDpadDown()) {
         		Common.debug("Decrementing play number");
         		 auto.prevPlay();
         	}
@@ -78,40 +76,67 @@ public class Robot extends SampleRobot {
     	Common.debug("Starting: teleop");
         dt.setSafetyEnabled(true);  
         while (isOperatorControl() && isEnabled()) {
+        	
         	// DRIVE TRAIN
-       		dt.hDrive(joyLift.leftY(), joyLift.leftX(), joyLift.rightX());	// Drive with arcade style using left stick by default
+        	if (joyBin.leftY() == 0 && joyBin.leftX() == 0 && joyBin.rightTrigger() == 0) {
+	       		dt.hDrive(joyTote.leftY(), joyTote.leftX(), joyTote.rightTrigger() - joyTote.leftTrigger());	// Drive with arcade style using left stick by default
+	
+        	} if (joyTote.leftY() == 0 && joyTote.leftX() == 0 && joyTote.rightX() == 0) {
+	       		dt.hDrive(joyBin.leftY(), joyBin.leftX(), joyBin.rightTrigger() - joyBin.leftTrigger());
 
-        	if (joyLift.leftBumper()) {					// Left bumper to rotate Left
-        		dt.rotateLeft90();
-            } else if (joyLift.rightBumper()) {			// Right bumper to rotate right
-            	dt.rotateRight90();
+        	// NOTHING
+
+	        } if (joyBin.whenRightClick()) {        		
+        		//Nothing!
+	        	
+	        } if (joyBin.whenLeftClick()) {
+	        	//Nothing
+	        	
+	        } if (joyTote.whenRightClick()) {        	
+        		//Nothing!
+	        	
+	        } if (joyTote.whenLeftClick()) {
+	        	//Nothing!
+        	
+	        } if (joyTote.rightBumper()) {			
+    			//Nothing!
+	        	
+    		} if (joyTote.leftBumper()) {
+    			//Nothing!
+    		}
+
+        	// LIFT
+    		
+	    	if (joyTote.whenA()) {	// Lift up
+	    		lift.levelDown();
+	    	
+	    	} if (joyTote.whenB()) {
+	    		lift.levelUp();
+	    		
+	    	} if (lift.isIdle() || lift.isMoving()) {		// Move lift freely, if ready for movement
+        		if (joyTote.rightY() !=0 ) {
+        			lift.moveFree(joyTote.rightY());
+        		}
+        	}
+
+        	if (lift.isIdle() || lift.isMoving()) {		// Move lift freely, if ready for movement
+        		lift.moveFree(joyBin.rightY());
         	}
         	
-        	// LIFT
-        	if (joyLift.whenStart()) {					// Start button to initilize lift and claw
+        	if (joyTote.whenStart()) {					
         		Common.debug("Initializing Lift and Claw");
         		lift.init();
         		claw.init();
         	}
         	
-        	if (joyLift.whenDpadUp()) {					// Level up
-        		lift.levelUp();
-        	}
-        	
-        	if (joyLift.whenDpadDown()) {				// Level down
-        		lift.levelDown();
-        	}
-        	
-        	if (joyLift.whenRightClick()) {        		// Release the tote
-        		lift.releaseTote();
-        	}
-        	
-        	if (lift.isIdle() || lift.isMoving()) {		// Move lift freely, if ready for movement
-        		lift.moveFree(joyLift.rightY());
+        	if (joyBin.whenStart()) {					
+        		Common.debug("Initializing Lift and Claw");
+        		lift.init();
+        		claw.init();
         	}
         	
         	// COMPRESSOR
-        	if (joyLift.whenSelect()) {					// Toggle compressor
+        	if (joyTote.whenSelect()) {					// Toggle compressor
         		if (comp.enabled() == true) {
         			comp.stop();
         		} if (comp.enabled() == false) {
@@ -119,26 +144,47 @@ public class Robot extends SampleRobot {
         		}	
         	}
         	
+        	if (joyBin.whenSelect()) {					// Toggle compressor
+        		if (comp.enabled() == true) {
+        			comp.stop();
+        		} if (comp.enabled() == false) {
+        			comp.start();
+        		}	
+        	}
+        	
+        	// CARRIAGE
+        	 if (joyBin.leftBumper()) {					
+         		// Carriage up
+        	 } if (joyBin.leftTrigger() > .5) {
+        		 // Carriage down
+        	
         	// FOREBAR
-        	if (joyLift.X()) {						// Forebar is tri-state: Up, Down or Stopped
+        	if (joyBin.rightBumper()) {						// Forebar is tri-state: Up, Down or Stopped
         		claw.forebarUp();
-        	} else if (joyLift.Y()) {
+        	} if (joyBin.rightTrigger() > .5) {
         		claw.forbarDown();
         	} else {
         		claw.forebarStop();
-        	}
-        	
+
         	// MAST
-        	if (joyLift.whenDpadLeft()) {
-        			claw.mastToggle();        		
-        	}
+        	if (joyBin.whenY()) {
+        		claw.mastToggle();        	
+        	} 
         	
+        	//CLAW
+ 	        } if (joyBin.whenDpadRight()) {		
+ 	        	//Claw rotate
+ 	    		
+ 	        } if (joyBin.whenDpadLeft())
+ 	        	//Claw rotate
+ 	        	
         	// UPDATE SUBSYSTEMS
         	lift.update();
         	claw.update();
 
             Timer.delay(1.0 / Constants.REFRESH_RATE);		// wait before repeating main update loop
-        } 
+        }
+        }
         Common.debug("Ending: teleop");
     }
 

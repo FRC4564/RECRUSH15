@@ -16,6 +16,7 @@ public class Lift {
 	private static final int LIFT_INIT = 1;     //Initialization in process
 	private static final int LIFT_IDLE = 2;     //Not moving, initialized and ready to move
 	private static final int LIFT_MOVING = 3;   //Moving
+	private static final int LIFT_FREE = 4;     //Moving freely under joystick control
 	//Physical dimensions
     private static final double LIFT_MIN_HEIGHT = 10.3;   // Inches from top of lift arm to floor when lift is at its lower limit.
     private static final double LIFT_MAX = 70;  // Inches from bottom of lift arm to floor when lift is at its upper limit.
@@ -73,6 +74,12 @@ public class Lift {
 		//Don't go lower than limit switch
 		if (power < 0) {
 			if (lowerLimit.get() == LOWER_LIMIT_PRESSED) {
+				power = 0;
+			}
+		}
+		//Don't go above allowable height (ignore for Init state)
+		if (power>0 && liftState > LIFT_IDLE) {
+			if (getHeight() >= LIFT_MAX) {
 				power = 0;
 			}
 		}
@@ -178,8 +185,12 @@ public class Lift {
 	// Speed can be +1.0 to -1.0 where +1.0 is up at 100% of VEL_MAX_IPS.
 	// Update cycle is typcially 100 cycles per second.
 	public void moveFree(double speed)  {
-		double distance = VEL_MAX_IPS * speed / Constants.REFRESH_RATE;  //Inches to move within a refresh cycle
-		gotoHeight(getHeight() + distance);  //Move relative to current height
+		if (speed != 0) {
+			//double distance = VEL_MAX_IPS * speed / Constants.REFRESH_RATE * 5;  //Inches to move within a refresh cycle
+			//gotoHeight(getHeight() + distance);  //Move relative to current height
+			targetPIDVelocity = VEL_MAX_IPS * -speed;
+			liftState = LIFT_FREE;
+		}
 	}
 	
 	// Move lift to a specific level
@@ -229,16 +240,22 @@ public class Lift {
 
 	// Called every cycle, when in Move state
 	private void updateMove() {
-		if (Math.abs(getHeight() - targetPIDHeight) <= TOLERANCE) {
-			liftState = LIFT_IDLE;
-			//targetPIDHeight = getHeight();
-//			setBrake();
+		if (liftState == LIFT_FREE) {
+			PIDVelocity();
+			liftState = LIFT_IDLE;   // Force back to idle every cycle, Free will override state each cycle if called
+			targetPIDHeight = getHeight();  // Preserve current height
 		} else {
-			liftState = LIFT_MOVING;
-//			releaseBrake();
+			if (Math.abs(getHeight() - targetPIDHeight) <= TOLERANCE) {
+				liftState = LIFT_IDLE;
+				//targetPIDHeight = getHeight();
+	//			setBrake();
+			} else {
+				liftState = LIFT_MOVING;
+	//			releaseBrake();
+			}
+			PIDHeight();
+			PIDVelocity();
 		}
-		PIDHeight();
-		PIDVelocity();
 	}
 	
 	// Must call this update procedure at a cycle of 100 times per second.
@@ -265,8 +282,8 @@ public class Lift {
 		return liftState == LIFT_IDLE;
 	}
 	
-	// Is lift moving? 
+	// Is lift moving via PID for Free move? 
 	public boolean isMoving() {
-		return liftState == LIFT_MOVING;
+		return (liftState == LIFT_MOVING || liftState == LIFT_FREE);
 	}
 }
