@@ -32,16 +32,16 @@ public class DriveTrain extends RobotDrive {
 
     // Encoder definitions
     private Encoder encoderFB = new Encoder(Constants.DIO_DRIVE_FB_ENCODER_A, Constants.DIO_DRIVE_FB_ENCODER_B, 
-    		false, EncodingType.k1X);
+    		true, EncodingType.k1X);
     private Encoder encoderLR = new Encoder(Constants.DIO_DRIVE_LR_ENCODER_A, Constants.DIO_DRIVE_LR_ENCODER_B,
-    		false, EncodingType.k1X);
-    private static final double COUNTS_PER_INCH_FB = 460 / 12.5663; // wheel circumference = 12.5663 /1 rev = 460
+    		true, EncodingType.k1X);
+    private static final double COUNTS_PER_INCH_FB = 37.865;
     private static final double COUNTS_PER_INCH_LR = 250 / 12.5663; //wheel circumference = 12.5663 / 1 rev = 250 counts 
     // Forward/Backward, Left/Right and Turn PID Parameters
-    private static final double Kp_FB = .01;
-    private static final double Kp_LR = .01;
-    private final static double Kp_TURN = 0.03;
-    private static final double MIN_SPEED_FB = 0.1; 	//Min motor power
+    private static final double Kp_FB = .08;
+    private static final double Kp_LR = .08;
+    private final static double Kp_TURN = 0.08;
+    private static final double MIN_SPEED_FB = 0.3; 	//Min motor power
     private static final double MIN_SPEED_LR = 0.1; 	//Min motor power
     private static final double MIN_SPEED_TURN = 0.1;	//Min motor power
     private static final double MAX_SPEED_FB = 0.75;		//Max motor power
@@ -81,6 +81,10 @@ public class DriveTrain extends RobotDrive {
     	gyro.reset();
     	gyro.setSensitivity(GYRO_CALIBRATION);
     	targetHeading = 0;
+    	moveTargetFB = 0;
+    	moveTargetLR = 0;
+    	encoderFB.reset();
+    	encoderLR.reset();
     }
     
     // Set speed based on Y value from left joystick and a straight line acceleration curve
@@ -136,6 +140,7 @@ public class DriveTrain extends RobotDrive {
     
     // Set drive motors, mixing turns into slide motors
     private void setDrive(double drive, double turn, double slide) {
+    	slide = slide * 0.4;
     	arcadeDrive(drive, turn);
     	frontC.set(-slide - turn * 0.1);
     	rearC.set(slide - turn * 0.1);
@@ -173,9 +178,9 @@ public class DriveTrain extends RobotDrive {
     	drive = deadzone(drive);
     	turn = deadzone(turn);
     	slide = deadzone(slide);
-    	drive = driveAccelCurve(drive, 0.1);
-    	turn = turnAccelCurve(turn, 0.1);
-    	slide = slideAccelCurve(slide, 0.1);
+    	drive = driveAccelCurve(drive, 0.04);
+    	turn = turnAccelCurve(turn, 0.04);
+    	slide = slideAccelCurve(slide, 0.04);
     	// if any input is given, snap out of Move state
     	if (drive != 0 || turn != 0 || slide != 0) {
     		moveStateFB = STATE_IDLE;
@@ -224,6 +229,12 @@ public class DriveTrain extends RobotDrive {
     	}
     	turnState = STATE_MOVING;
     }
+    
+    // Turn robot number degrees based on current heading. Positive values turn clockwise.
+    public void rotate(double degrees) {
+    	targetHeading = gyro.getAngle() + degrees;
+    	turnState = STATE_MOVING;
+    }
     	
     public void rotateLeft90() {
     	targetHeading = Math.floor((gyro.getAngle()-2) / 90)*90;
@@ -253,6 +264,7 @@ public class DriveTrain extends RobotDrive {
 		SmartDashboard.putNumber("moveSpeedFB", moveSpeed );
 		SmartDashboard.putNumber("moveTargetFB", moveTargetFB );
 		SmartDashboard.putNumber("encoderFB inches", encoderFB.getDistance() );
+		SmartDashboard.putNumber("moveStateFB", moveStateFB);
 		return -moveSpeed;  //Invert required since negative values drive forward.
 	}
     
@@ -297,10 +309,13 @@ public class DriveTrain extends RobotDrive {
     	moveStateLR = STATE_MOVING;
     }
 
-    // If using distnace movement and rotate commands, call updateMove every robot Refresh cycle
+    // If using distance movement and rotate commands, call updateMove every robot Refresh cycle
     // to allow PIDs to perform moves.
     public void updateMove() {
-    		setDrive(PIDMoveFB(),PIDTurn(),PIDMoveLR());
+    	double drive = driveAccelCurve(PIDMoveFB(), 0.02);
+    	double turn = turnAccelCurve(PIDTurn(), 0.02);
+    	double slide = slideAccelCurve(PIDMoveLR(), 0.02);
+   		setDrive(drive,turn,slide);
     }
     
     public void gyroReset() {
@@ -308,6 +323,7 @@ public class DriveTrain extends RobotDrive {
     }
     
     public boolean isIdle(){
+    	Common.debug(turnState+" "+moveStateFB+" "+moveStateLR);
     	return (turnState == STATE_IDLE && moveStateFB == STATE_IDLE && moveStateLR == STATE_IDLE);
     }
 }

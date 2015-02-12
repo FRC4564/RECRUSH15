@@ -26,26 +26,27 @@ public class Auto {
 	private int processStatus = STOPPED;
 	private Countdown processTimer = new Countdown();  //Some steps require a timer			
 	// Constructor
-	public Auto (DriveTrain dt, Lift lift, Claw claw) {
-		this.dt = dt;
-		this.lift = lift;
-		this.claw = claw;
+	public Auto (DriveTrain d, Lift l, Claw c) {
+		dt = d;
+		lift = l;
+		claw = c;
 
 		//Script 1 All totes.
 		script.add("driveInit");
-		script.add("driveForward 12");
+		script.add("wait 5");
+		script.add("driveForward 50");
 		script.add("driveWait 5");
-		script.add("driveBackward 12");
+		script.add("driveBackward 50");
 		script.add("driveWait 5");
 		playbook.add(new ArrayList<String>(script));
 		script.clear();
 		//Script 2 Our tote.
-		script.add("liftInit");
-		script.add("liftWait 5");
-		script.add("level 2");
-		script.add("liftWait 5");
-		playbook.add(new ArrayList<String>(script));
-		script.clear();
+		//script.add("liftInit");
+		//script.add("liftWait 5");
+		//script.add("level 2");
+		//script.add("liftWait 5");
+		//playbook.add(new ArrayList<String>(script));
+		//script.clear();
 		//Script 3 Our bin.
 		//Script 4 Our bin and tote.
 		//Script 5 Go to autozone.
@@ -79,21 +80,23 @@ public class Auto {
 		autoTimer.set(15);						// ...the 15 second autonomous period
 		
 		script = playbook.get(selectedPlay - 1);		// Load the script from the playbook
-		System.out.println(script);
-
+		Common.debug("Auto Script:" + script);
+		Common.debug("Command: "+script.get(stepIndex));
+		
 		while (! autoTimer.done()) {
 			if (stepIndex < script.size()) {
-				switch (runStep(script.get(stepIndex))) {
+				processStatus = runStep(script.get(stepIndex)); 
+				switch (processStatus) {
 					case DONE:
 						stepIndex += 1;
-						SmartDashboard.putString("Step ndx", script.get(stepIndex));
+						Common.debug("Command: " + script.get(stepIndex));
 						break;
 					case TIMEOUT:
 						System.err.print("TIMEOUT AT STEP "+ stepIndex);
 						stepIndex = 999;
 						break;
 					case INVALID:
-						System.err.print("INVALID STATUS - PROCESS COMMAND METHOD BUG - AT STEP "+ stepIndex);
+						System.err.print("INVALID STATUS - runCommand didn't set a status at step "+ stepIndex);
 						stepIndex = 999;
 						break;
 					case BADCOMMAND:
@@ -105,7 +108,7 @@ public class Auto {
 			dt.updateMove();
 			lift.update();
 			claw.update();
-			Timer.delay(2);
+			Timer.delay(1.0/Constants.REFRESH_RATE);
 		}
 	}
 	
@@ -124,9 +127,7 @@ public class Auto {
 
 	private int runCommand(String command,double parameter)  {
 		int status = INVALID;  //Status will change if command processes properly
-		SmartDashboard.putString("Command", command);
-		return DONE;
-		/*switch (command) {
+		switch (command) {
 			// driveInit
 			case "DRIVEINIT":
 				dt.init();
@@ -148,7 +149,7 @@ public class Auto {
 				//dt.;
 				break;
 			case "DRIVETURN":
-				dt.rotateTo(dt.getHeading() + parameter);
+				dt.rotate(parameter);
 				break;
 			case "DRIVEHEADING" :
 				dt.rotateTo(parameter);
@@ -159,6 +160,8 @@ public class Auto {
 						status = DONE;
 					} else if (processTimer.done()) {
 						status = TIMEOUT;
+					} else {
+						status = RUNNING;
 					}
 				} else {
 					if (parameter == 0) {
@@ -191,7 +194,9 @@ public class Auto {
 						status = DONE;
 					} else if (processTimer.done()) {
 						status = TIMEOUT;
-					}
+					} else {
+						status = RUNNING;
+					}	
 				} else {
 					if (parameter == 0) {
 						processTimer.set(999);
@@ -201,11 +206,23 @@ public class Auto {
 					status = RUNNING;
 				}
 				break;
+			case "WAIT":
+				if (processStatus == RUNNING) {
+					if (processTimer.done()) {
+						status = DONE;
+					} else {
+						status = RUNNING;
+					}
+				} else {
+					processTimer.set(parameter);
+					status = RUNNING;
+				}
+				break;
 			// Unknown command
 			default:
 				status = BADCOMMAND;
 				break;
 		}
-		return status;*/
+		return status;
 	}
 }

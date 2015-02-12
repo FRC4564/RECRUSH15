@@ -191,6 +191,10 @@ public class Claw {
 		}		
 	}
 	
+	public boolean isIdle() {
+		return carriageState == CARRIAGE_IDLE;
+	}
+	
 	// WRIST
 
 	// Initiate moving the wrist to a horizontal position
