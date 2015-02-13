@@ -76,6 +76,7 @@ public class Robot extends SampleRobot {
     // TELEOP MODE
     public void operatorControl() {
     	Common.debug("Starting: teleop");
+    	dt.init();
         dt.setSafetyEnabled(true);  
         while (isOperatorControl() && isEnabled()) {
         	
@@ -123,10 +124,17 @@ public class Robot extends SampleRobot {
         		 // Carriage down
         	}
         	
+	    	if (claw.isIdle() || claw.isMoving()) {			// Move carriage freely, if ready for movement
+        		if (joyBin.rightY() !=0 ) {
+        			claw.moveFree(joyBin.rightY());
+        		}
+        	}
+        	
+        	
         	// FOREBAR
-        	if (joyBin.rightBumper()) {						// Forebar is tri-state: Up, Down or Stopped
+        	if (joyBin.dpadUp()) {						// Forebar is tri-state: Up, Down or Stopped
         		claw.forebarUp();
-        	} else if (joyBin.rightTrigger() > .5) {
+        	} else if (joyBin.dpadDown()) {
         		claw.forbarDown();
         	} else {
         		claw.forebarStop();
@@ -143,6 +151,11 @@ public class Robot extends SampleRobot {
  	        }	
  	        if (joyBin.whenDpadLeft()) {
  	        	//Claw rotate
+ 	        }
+ 	        
+ 	        // HAND
+ 	        if (joyBin.whenA()) {
+ 	        	claw.handToggle();
  	        }
  	        	
         	// UPDATE SUBSYSTEMS

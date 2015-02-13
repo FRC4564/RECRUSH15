@@ -18,8 +18,8 @@ public class Lift {
 	private static final int LIFT_MOVING = 3;   //Moving
 	private static final int LIFT_FREE = 4;     //Moving freely under joystick control
 	//Physical dimensions
-    private static final double LIFT_MIN_HEIGHT = 10.3;   // Inches from top of lift arm to floor when lift is at its lower limit.
-    private static final double LIFT_MAX = 70;  // Inches from bottom of lift arm to floor when lift is at its upper limit.
+    private static final double LIFT_MIN_HEIGHT = 8.75;   // Inches from top of lift arm to floor when lift is at its lower limit.
+    private static final double LIFT_MAX = 75;  // Inches from top of lift arm to floor when lift is at its upper limit.
     private static final double PLATFORM = 2;   // Height of the field scoring platform
     private static final double TOTE_HEIGHT = 12.1; // Dimensional height of a tote
     private static final double TOTE_STACKED = 11.875;  // When interlocked, additional height of a stacked tote
@@ -34,12 +34,12 @@ public class Lift {
     private static final int MAX_LEVEL = 6; // Highest level lift can reach.
 
     //PID constants and variables
-    private static final double VEL_Kp = 0.002;
+    private static final double VEL_Kp = 0.003;
     private static final double VEL_Kd = 0.000;
     private static final double MOTOR_MAX_POWER = 1.0;  //Maximum allowed motor power (constrained by Velocity PID) 
     private static final double HEIGHT_Kp = 3.0;
     private static final double HEIGHT_Kd = 0.1;
-    private static final double VEL_MIN_IPS = 2.0;
+    private static final double VEL_MIN_IPS = 1.8;
     private static final double VEL_MAX_IPS = 15.0;     //Fastest allowed movement of lift (constrained by Height PID).
     private double targetPIDVelocity = 0.0;	            //Target Velocity, controlled via PID
     private double prevPIDVelocityError = 0.0;          //Used for PID derivative
@@ -47,7 +47,7 @@ public class Lift {
     private double targetPIDHeight = LIFT_LEVEL0;       //Target Height (inches from floor to bottom of arm), controlled via PID
     private double prevPIDHeightError = 0.0;            //Used for PID derivative
     // Encoder, Motor, Limit switch constants
-	private static final double COUNTS_PER_INCH = 56;  //encoder counts per inch of lift movement
+	private static final double COUNTS_PER_INCH = 55.296;  //encoder counts per inch of lift movement
     private static final double TOLERANCE = 0.25;        //allowable inch tolerance between target and encoder for positional alignment
 	private static final boolean MOTOR_INVERT = true;  // inverted means positive motor values move down
 	private static final double MOTOR_INIT_SPEED = -0.25;  //speed to move lift when finding home position
@@ -268,6 +268,7 @@ public class Lift {
 		}
 		SmartDashboard.putNumber("Lift state", liftState);
 		SmartDashboard.putBoolean("Lower Limit", lowerLimit.get() == LOWER_LIMIT_PRESSED);
+		SmartDashboard.putNumber("Lift encoder",encoder.get());
 		SmartDashboard.putNumber("Lift encoder inches",encoder.getDistance());
 		SmartDashboard.putNumber("Calculated height", getHeight());
 		SmartDashboard.putNumber("Target height", targetPIDHeight);

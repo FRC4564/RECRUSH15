@@ -106,7 +106,7 @@ public class Xbox extends Joystick {
 		}
 	
 	public boolean rightBumper() {
-		return getRawButton(5);
+		return getRawButton(6);
 	}
 	
 	public boolean whenRightBumper() {
@@ -124,7 +124,7 @@ public class Xbox extends Joystick {
 	}
 	
 	public boolean leftBumper() {
-		return getRawButton(6);
+		return getRawButton(5);
 		
 	}
 	

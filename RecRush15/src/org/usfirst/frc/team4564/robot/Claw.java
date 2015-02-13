@@ -29,10 +29,12 @@ public class Claw {
     private static final double HEIGHT_Kd = 0.1;
     private static final double SPEED_Kp = 0.02;
     private static final double SPEED_Kd = 0.000;
+    private static final double TOLERANCE = 0.25;
     private double targetPIDHeight = CARRIAGE_HIGH;  //Carriage's home position
 	private double prevPIDHeightError = 0.0;
 	private double prevPIDSpeedError = 0.0;
 	private double prevPIDSpeedPower = 0.0;
+	private static final double SPEED_MIN_IPS = 1.0;
 	private static final double SPEED_MAX_IPS = 15.0;
 	private double targetPIDSpeed = 0.0;
 	private static final boolean MOTOR_INVERT = true;  // Inverted means positive motor values moves carriage down
@@ -44,7 +46,9 @@ public class Claw {
 	private final static int CARRIAGE_INIT = 1;
 	private final static int CARRIAGE_IDLE = 2;
 	private final static int CARRIAGE_MOVING = 3;
+	private final static int CARRIAGE_FREE = 4;
 	private int carriageState = CARRIAGE_STOPPED;
+	
 
 	//Define Forebar
 	private Solenoid forebarUpSol = new Solenoid(Constants.SOL_FOREBAR_UP);
@@ -70,9 +74,11 @@ public class Claw {
     Solenoid handSol = new Solenoid(Constants.SOL_HAND);
 	private static final boolean HAND_SOL_OPEN = true;			//Solenoid value to open the hand
 	private static final boolean HAND_SOL_CLOSE = ! HAND_SOL_OPEN;  //Solenoid value to close the hand
+	private boolean handPositionOpen = false ;  					//Current hand position. True when hand is open.
 	
 	// Initiate carriage move to home position
 	public void init() {
+		handClose();
 		carriageState = CARRIAGE_INIT;
 		encoder.setDistancePerPulse(1.0/CARRIAGE_COUNTS_PER_INCH);  // Calibrate encoder to inches of travel
 	}
@@ -175,10 +181,10 @@ public class Claw {
 			prevPIDHeightError = error;
 			
 			speed = P + D;
-			if (speed > SPEED_MAX_IPS) {
-				speed = SPEED_MAX_IPS;
-			} else if (speed < -SPEED_MAX_IPS) {
-				speed = -SPEED_MAX_IPS;
+			if (carriageState == CARRIAGE_MOVING) {
+				speed = Common.constrain(speed, SPEED_MIN_IPS, SPEED_MAX_IPS);
+			} else {
+				speed = 0;
 			}
 			targetPIDSpeed = speed;
 	    }
@@ -191,9 +197,29 @@ public class Claw {
 		}		
 	}
 	
+	// Move the carriage at the given speed, by setting a target relative to current position
+	// Speed can be +1.0 to -1.0 where +1.0 is up at 100% of MAX_IPS.
+	// Update cycle is typcially 100 cycles per second.
+	public void moveFree(double speed)  {
+		if (speed != 0) {
+			//double distance = SPEED_MAX_IPS * speed / Constants.REFRESH_RATE * 5;  //Inches to move within a refresh cycle
+			//gotoHeight(getHeight() + distance);  //Move relative to current height
+			targetPIDSpeed = SPEED_MAX_IPS * speed;
+			carriageState = CARRIAGE_FREE;
+		}
+	}
+	
+	// Is lift idle - Idle means lift is initialized and ready for a move request.
 	public boolean isIdle() {
 		return carriageState == CARRIAGE_IDLE;
 	}
+	
+	// Is lift moving via PID for Free move? 
+	public boolean isMoving() {
+		return (carriageState == CARRIAGE_MOVING || carriageState == CARRIAGE_FREE);
+	}
+	
+
 	
 	// WRIST
 
@@ -226,6 +252,24 @@ public class Claw {
 	}
 }
 	
+	public void handOpen() {
+	    handSol.set(HAND_SOL_OPEN);
+	    handPositionOpen = true;
+	}
+	
+	public void handClose() {
+	    handSol.set(HAND_SOL_CLOSE);
+	    handPositionOpen = false;
+	}
+	
+	public void handToggle() {
+		if (handPositionOpen) {
+			handClose();
+		} else {
+			handOpen();
+		}
+	}
+	
 	// Move carriage upward until limit switch and then set to Idle state
 	private void carriageInit() {
 		if (carriageLimit.get() == CARRIAGE_LIMIT_PRESSED) {
@@ -242,7 +286,15 @@ public class Claw {
 		if (carriageState == CARRIAGE_INIT) {
 			carriageInit();
 			PIDSpeed();
+		} else if (carriageState == CARRIAGE_FREE) {
+			PIDSpeed();
+			carriageState = CARRIAGE_IDLE;
+			targetPIDSpeed = 0;
+			targetPIDHeight = carriageHeight();
 		} else if (carriageState != CARRIAGE_STOPPED) {
+			if (Math.abs(carriageHeight() - targetPIDHeight) <= TOLERANCE) {
+				carriageState = CARRIAGE_IDLE;
+			}
 			PIDHeight();
 			PIDSpeed();
 		}
@@ -254,5 +306,6 @@ public class Claw {
 		SmartDashboard.putBoolean("Wrist Limit Ver", verticalLimit.get() == VERTICAL_LIMIT_PRESSED);
 		
 	}
+	
 }
 	
