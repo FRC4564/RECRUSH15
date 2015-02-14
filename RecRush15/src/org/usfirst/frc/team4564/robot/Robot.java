@@ -124,11 +124,7 @@ public class Robot extends SampleRobot {
         		 // Carriage down
         	}
         	
-	    	if (claw.isIdle() || claw.isMoving()) {			// Move carriage freely, if ready for movement
-        		if (joyBin.rightY() !=0 ) {
-        			claw.moveFree(joyBin.rightY());
-        		}
-        	}
+        	claw.moveFree(-joyBin.rightY());			// Move carriage freely, if ready for movement
         	
         	
         	// FOREBAR
@@ -157,6 +153,17 @@ public class Robot extends SampleRobot {
  	        if (joyBin.whenA()) {
  	        	claw.handToggle();
  	        }
+ 	        
+ 	        // Wrist
+ 	        if (joyBin.dpadLeft()) {
+ 	        	claw.wristLeft();
+ 	        } else if (joyBin.dpadRight()) {
+ 	        		claw.wristRight();
+ 	        } else {
+ 	        	claw.wristStop();
+ 	        }
+ 	        
+ 	    
  	        	
         	// UPDATE SUBSYSTEMS
         	lift.update();

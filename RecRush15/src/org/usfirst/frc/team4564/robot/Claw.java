@@ -24,6 +24,7 @@ public class Claw {
 	private static final double CARRIAGE_LOW = 5;    //Inches carriage is above floor when at its lowest point
 	private static final double CARRIAGE_HIGH = 65;  //Inches carriage is above floor when at its highest point
 	private static final double CARRIAGE_COUNTS_PER_INCH = 70.09174311;   //Encoder ticks per inch of carriage movement
+	private static final double CARRIAGE_MAX = 43.5;
 	// PID Carriage
 	private static final double HEIGHT_Kp = 3.0;
     private static final double HEIGHT_Kd = 0.1;
@@ -57,6 +58,8 @@ public class Claw {
 	private static final boolean FOREBAR_SOL_DISABLE = ! FOREBAR_SOL_ENABLE;
 	private boolean forebarPostionUp = true;
 	private boolean forebarPostionStop = false;
+	private static final double FOREBAR_HEIGHT_UP = 8;
+	private static final double FOREBAR_HEIGHT_DOWN = 12;
 	
 	//Define Wrist 
 	public static boolean VERTICAL_LIMIT_PRESSED = false; // This is the value of limit switch when pressed
@@ -75,6 +78,8 @@ public class Claw {
 	private static final boolean HAND_SOL_OPEN = true;			//Solenoid value to open the hand
 	private static final boolean HAND_SOL_CLOSE = ! HAND_SOL_OPEN;  //Solenoid value to close the hand
 	private boolean handPositionOpen = false ;  					//Current hand position. True when hand is open.
+	private static final double THUMB_HEIGHT = 6;
+	private static final double FINGER_HEIGHT = 15;
 	
 	// Initiate carriage move to home position
 	public void init() {
@@ -121,9 +126,26 @@ public class Claw {
 	
 	// CARRIAGE
 	
-	// Calculate the height of the carriage from the floor.
+	// Calculate the height of the carriage along the mast. 
+	// 0 = lowest point
 	public double carriageHeight() {
-		return CARRIAGE_HIGH - encoder.getDistance();
+		return CARRIAGE_MAX - encoder.getDistance();
+	}
+	
+	public double safeMinHeight() {
+		if (isVertical()) {
+			return THUMB_HEIGHT;		
+		} else {
+			return 0;
+		}
+	}
+	
+	public double safeMaxHeight() { 
+		if (isVertical()) {
+			return (CARRIAGE_MAX - FOREBAR_HEIGHT_UP - FINGER_HEIGHT);		
+		} else {
+			return CARRIAGE_MAX;
+		}
 	}
 	
 	// Set the power of the carriage motor, but restricting its movement to within safe limits.
@@ -175,6 +197,7 @@ public class Claw {
 	    double error, speed, P, D;
 	    if (carriageState > CARRIAGE_IDLE) { //Move to target as long as Init has been done
 			// Calculate PID
+	    	targetPIDHeight = Common.constrain(targetPIDHeight, safeMinHeight(), safeMaxHeight());
 			error = targetPIDHeight - carriageHeight();  // Targeted height from floor versus current carriage position  
 			P = error * HEIGHT_Kp;
 			D = (error - prevPIDHeightError) / (1.0 / Constants.REFRESH_RATE) * HEIGHT_Kd;
@@ -191,21 +214,24 @@ public class Claw {
 	}
 
 	// Set carriage to move to safe height from floor to have claw in vertical position
-	private void safeHeight() {
-		if (HORIZONTAL_LIMIT_PRESSED = ! true && targetPIDHeight < SAFE_HEIGHT) {
-			targetPIDHeight = SAFE_HEIGHT;
-		}		
-	}
+	//private void safeHeight() {
+	//	if (HORIZONTAL_LIMIT_PRESSED = ! true && targetPIDHeight < SAFE_HEIGHT) {
+	//		targetPIDHeight = SAFE_HEIGHT;
+	//	}		
+	//}
 	
 	// Move the carriage at the given speed, by setting a target relative to current position
 	// Speed can be +1.0 to -1.0 where +1.0 is up at 100% of MAX_IPS.
 	// Update cycle is typcially 100 cycles per second.
 	public void moveFree(double speed)  {
-		if (speed != 0) {
-			//double distance = SPEED_MAX_IPS * speed / Constants.REFRESH_RATE * 5;  //Inches to move within a refresh cycle
-			//gotoHeight(getHeight() + distance);  //Move relative to current height
-			targetPIDSpeed = SPEED_MAX_IPS * speed;
-			carriageState = CARRIAGE_FREE;
+		if (speed != 0 && carriageState != CARRIAGE_STOPPED) {
+			if ((speed > 0 && carriageHeight() < safeMaxHeight() ) ||
+				( speed < 0 && carriageHeight() > safeMinHeight()) ) {
+				//double distance = SPEED_MAX_IPS * speed / Constants.REFRESH_RATE * 5;  //Inches to move within a refresh cycle
+				//gotoHeight(getHeight() + distance);  //Move relative to current height
+				targetPIDSpeed = SPEED_MAX_IPS * speed;
+				carriageState = CARRIAGE_FREE;
+			}
 		}
 	}
 	
@@ -222,6 +248,14 @@ public class Claw {
 
 	
 	// WRIST
+	
+	public boolean isHorizontal() {
+		return false;
+	}
+	
+	public boolean isVertical() {
+		return true;
+	}
 
 	// Initiate moving the wrist to a horizontal position
 	public void	horizontal() {
@@ -270,6 +304,18 @@ public class Claw {
 		}
 	}
 	
+	public void wristLeft() {   //rotate counterclockwise
+		wristMotor.set(-.25);
+		}
+	
+	public void wristRight() {
+		wristMotor.set(.25);
+	}
+	
+	public void wristStop() {
+		wristMotor.set(0);
+	}
+	
 	// Move carriage upward until limit switch and then set to Idle state
 	private void carriageInit() {
 		if (carriageLimit.get() == CARRIAGE_LIMIT_PRESSED) {
@@ -302,8 +348,11 @@ public class Claw {
 		SmartDashboard.putNumber("Carriage Distance", encoder.getDistance());
 		SmartDashboard.putNumber("Carriage Encoder", encoder.get());
 		SmartDashboard.putBoolean("Carriage Limit?", carriageLimit.get() == CARRIAGE_LIMIT_PRESSED);
-		SmartDashboard.putBoolean("Wrist Limit Hor", horizontalLimit.get() == HORIZONTAL_LIMIT_PRESSED);
-		SmartDashboard.putBoolean("Wrist Limit Ver", verticalLimit.get() == VERTICAL_LIMIT_PRESSED);
+		SmartDashboard.putNumber("Carriage Height", carriageHeight());
+		SmartDashboard.putNumber("Carriage Target", targetPIDHeight);
+		SmartDashboard.putNumber("Carriage State", carriageState);
+		//SmartDashboard.putBoolean("Wrist Limit Hor", horizontalLimit.get() == HORIZONTAL_LIMIT_PRESSED);
+		//SmartDashboard.putBoolean("Wrist Limit Ver", verticalLimit.get() == VERTICAL_LIMIT_PRESSED);
 		
 	}
 	
