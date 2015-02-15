@@ -188,7 +188,7 @@ public class Robot extends SampleRobot {
     	}
     	dt.moveForward(60);
     	while (isEnabled()) {
-    	   	dt.updateMove();
+    	   	dt.update();
 	    	lift.update();
 	    	claw.update();
 	    	

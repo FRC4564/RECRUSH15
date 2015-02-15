@@ -43,9 +43,9 @@ public class DriveTrain extends RobotDrive {
     private static final double Kp_FB = .08;
     private static final double Kp_LR = .08;
     private final static double Kp_TURN = 0.08;
-    private static final double MIN_SPEED_FB = 0.1; 	//Min motor power
-    private static final double MIN_SPEED_LR = 0.1; 	//Min motor power
-    private static final double MIN_SPEED_TURN = 0.1;	//Min motor power
+    private static final double MIN_SPEED_FB = 0.2; 	//Min motor power
+    private static final double MIN_SPEED_LR = 0.2; 	//Min motor power
+    private static final double MIN_SPEED_TURN = 0.2;	//Min motor power
     private static final double MAX_SPEED_FB = 0.75;	//Max motor power
     private static final double MAX_SPEED_LR = 0.75;	//Max motor power
     private static final double MAX_SPEED_TURN = 0.5;	//Max motor power
@@ -61,6 +61,7 @@ public class DriveTrain extends RobotDrive {
     private int moveStateFB = 0;        // State is set through movement commands and cleared by PID
     private int moveStateLR = 0;   	    // State is set through movement commands and cleared by PID
     private int turnState = 0; 			// State is set through movement commands and cleared by PID
+    private double govenor = 1.0; 		// Overall governor of Max power to drive motors for PIDs.  1.0=100% or full power 0.5=50% 
     
     // Gyro-based heading control and PID
     Gyro gyro = new Gyro(0);
@@ -182,12 +183,6 @@ public class DriveTrain extends RobotDrive {
     	// Drive 
 		setDrive(drive,turn,slide);
 		
-    //	SmartDashboard.putNumber("Gyro", gyro.getAngle());
-    //	SmartDashboard.putNumber("Target Heading", targetHeading);
-    //	SmartDashboard.putNumber("LR encoder", encoderLR.get());
-    //	SmartDashboard.putNumber("LR distance", encoderLR.getDistance());
-    	SmartDashboard.putNumber("FB encoder", encoderFB.get());
-    	SmartDashboard.putNumber("FB distance", encoderFB.getDistance());
     }
     	
 	// Normalizes a heading to be within 0 to 360 degrees.
@@ -245,7 +240,7 @@ public class DriveTrain extends RobotDrive {
 				error = heading - (360 - targetHeading);
 			}
 			P = error * Kp_TURN;
-			turn = Common.constrain(P, MIN_SPEED_TURN, MAX_SPEED_TURN); 
+			turn = Common.constrain(P, MIN_SPEED_TURN, MAX_SPEED_TURN * govenor); 
 		}
 		return turn; 
     }
@@ -260,7 +255,7 @@ public class DriveTrain extends RobotDrive {
 		// Are we there yet?
 		if (Math.abs(error) > TOLERANCE_FB) {
 			P = error * Kp_FB;
-			moveSpeed = Common.constrain(P,MIN_SPEED_FB,MAX_SPEED_FB);
+			moveSpeed = Common.constrain(P,MIN_SPEED_FB,MAX_SPEED_FB * govenor);
 		} else {
 			moveStateFB = STATE_IDLE;
 			moveSpeed = 0;
@@ -282,16 +277,26 @@ public class DriveTrain extends RobotDrive {
 		// Are we there yet?
 		if (Math.abs(error) > TOLERANCE_LR) {
 			P = error * Kp_LR;
-			moveSpeed = Common.constrain(P,MIN_SPEED_LR,MAX_SPEED_LR);
+			moveSpeed = Common.constrain(P,MIN_SPEED_LR,MAX_SPEED_LR * govenor);
 		} else {
 			moveStateLR = STATE_IDLE;
 			moveSpeed = 0;
 		}
-		SmartDashboard.putNumber("moveSpeedLR", moveSpeed );
-		SmartDashboard.putNumber("moveTargetLR", moveTargetLR );
-		SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
+		//SmartDashboard.putNumber("moveSpeedLR", moveSpeed );
+		//SmartDashboard.putNumber("moveTargetLR", moveTargetLR );
+		//SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
 		return moveSpeed;
 	}
+ 
+    public boolean isIdle(){
+    	Common.debug(turnState+" "+moveStateFB+" "+moveStateLR);
+    	return (turnState == STATE_IDLE && moveStateFB == STATE_IDLE && moveStateLR == STATE_IDLE);
+    }
+    
+    // Set governor speed 100 = full speed, 50 = half speed
+    public void setSpeed(int percent) {
+    		govenor = percent / 100.0;
+    }
     
     public void moveForward(double inches) {
     	moveTargetFB = encoderFB.getDistance() + inches;
@@ -313,21 +318,18 @@ public class DriveTrain extends RobotDrive {
     	moveStateLR = STATE_MOVING;
     }
 
-    // If using distance movement and rotate commands, call updateMove every robot Refresh cycle
+    // If using distance movement and rotate commands, call update every robot Refresh cycle
     // to allow PIDs to perform moves.
-    public void updateMove() {
+    public void update() {
     	double drive = driveAccelCurve(PIDMoveFB(), 0.02);
     	double turn = turnAccelCurve(PIDTurn(), 0.02);
     	double slide = slideAccelCurve(PIDMoveLR(), 0.02);
    		setDrive(drive,turn,slide);
     }
     
+    // Reset gyro to 0 degrees.
     public void gyroReset() {
     	gyro.reset();
     }
-    
-    public boolean isIdle(){
-    	Common.debug(turnState+" "+moveStateFB+" "+moveStateLR);
-    	return (turnState == STATE_IDLE && moveStateFB == STATE_IDLE && moveStateLR == STATE_IDLE);
-    }
+
 }

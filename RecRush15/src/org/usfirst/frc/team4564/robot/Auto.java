@@ -33,7 +33,7 @@ public class Auto {
 		lift = l;
 		claw = c;
 
-		//Script 1 All totes.
+		//Script 1 Testing.
 		script.add("driveInit");
 		script.add("wait 5");
 		script.add("driveForward 50");
@@ -41,12 +41,15 @@ public class Auto {
 		script.add("driveBackward 50");
 		script.add("driveWait 5");
 		playbook.add(new ArrayList<String>(script));
-		script.clear();
 		//Script 2 Our tote.
-		//script.add("liftInit");
-		//script.add("liftWait 5");
-		//script.add("level 2");
-		//script.add("liftWait 5");
+		script.clear();
+		script.add("driveInit");
+		script.add("clawInit");
+		script.add("liftInit");
+		script.add("liftWait 5");
+		script.add("leftLevel 2");
+		script.add("liftWait 5");
+
 		//playbook.add(new ArrayList<String>(script));
 		//script.clear();
 		//Script 3 Our bin.
@@ -76,45 +79,58 @@ public class Auto {
 		return selectedPlay;
 	}
 	
+	// Run the selected play script, step by step.  Will run until all steps are done, or 15 seconds elapse.
+	// Error conditions during the run will halt step execution and stop the run.
 	public void run() {
 		int stepIndex = 0;  			        // Pointer to the current step with a play script.
+		String step;							// Current script step 
 		Countdown autoTimer = new Countdown();	// Countdown timer to make sure the play completes within...
-		autoTimer.set(15);						// ...the 15 second autonomous period
+		
+// ****** Changed from 14.9 to 60 for testing
+		autoTimer.set(60.0);						// ...the 15 second autonomous period
 		
 		script = playbook.get(selectedPlay - 1);		// Load the script from the playbook
 		Common.debug("Auto Script:" + script);
 		Common.debug("Command: "+script.get(stepIndex));
+		step = script.get(stepIndex);
 		processStatus = STARTING;
-		while (! autoTimer.done()) {
-			if (stepIndex < script.size()) {
-				processStatus = runStep(script.get(stepIndex)); 
-				switch (processStatus) {
-					case DONE:
-						stepIndex += 1;
-						processStatus = STARTING;
-						Common.debug("Command: " + script.get(stepIndex));
-						break;
-					case TIMEOUT:
-						System.err.print("TIMEOUT AT STEP "+ stepIndex);
-						stepIndex = 999;
-						break;
-					case INVALID:
-						System.err.print("INVALID STATUS - runCommand didn't set a status at step "+ stepIndex);
-						stepIndex = 999;
-						break;
-					case BADCOMMAND:
-						System.err.print("UNKNOWN COMMAND VERB AT STEP "+ stepIndex);
-						stepIndex = 999;
-						break;
-				}
+		while (! autoTimer.done() && stepIndex < script.size()) {
+			// Run the current step
+			processStatus = runStep(step);
+			// Process the status of the step
+			switch (processStatus) {
+				case DONE:
+					stepIndex += 1;
+					step = script.get(stepIndex);
+					processStatus = STARTING;
+					Common.debug("Command: " + step);
+					break;
+				case TIMEOUT:
+					Common.debug("AutoRun: TIMEOUT on step "+ step);
+					stepIndex = 999;
+					break;
+				case INVALID:
+					Common.debug("AutoRun: INVALID STATUS - runCommand didn't set a status on step "+ step);
+					stepIndex = 999;
+					break;
+				case BADCOMMAND:
+					Common.debug("AutoRun: UNKNOWN COMMAND VERB/PARAMETER on step "+ step);
+					stepIndex = 999;
+					break;
 			}
-			dt.updateMove();
+			// Refresh sub-systems every loop cycle
+			dt.update();
 			lift.update();
 			claw.update();
 			Timer.delay(1.0/Constants.REFRESH_RATE);
 		}
+		// Auto run complete - stop robot and be ready for TeleOp
+		dt.hDrive(0,0,0);  //Stop drivetrain movement
+		dt.setSpeed(100);  //Resume full speed operation
 	}
 	
+	// Parse a step into Command and Parameter and execute. 
+	// Returns result of the runCommand.
 	private int runStep(String step) {
 		String command;
 		double parameter;
@@ -124,10 +140,14 @@ public class Auto {
 			parameter = Double.valueOf(step.split(" ")[1]);
 			return runCommand(command, parameter);
 		}
-		
 		return runCommand(command, 0);
 	}
 
+	// Runs the command, based on the current processStatus and returns an updated status.
+	// The status needs to be set to STARTING when a new command is being initiated.
+	// For commands that require multiple cycles to complete, the status will be set to RUNNING until DONE.
+	// A status of INVALID signifies a logic error and runCommand itself.
+	// A status of BADCOMMAND indicates unknown command verb or bad parameter for command.
 	private int runCommand(String command,double parameter)  {
 		int status = INVALID;  //Status will change if command processes properly
 		switch (command) {
@@ -154,8 +174,11 @@ public class Auto {
 			case "DRIVETURN":
 				dt.rotate(parameter);
 				break;
-			case "DRIVEHEADING" :
+			case "DRIVEHEADING":
 				dt.rotateTo(parameter);
+				break;
+			case "DRIVESPEED":
+				dt.setSpeed((int) parameter);
 				break;
 			case "DRIVEWAIT":
 				if (processStatus == STARTING) {
@@ -165,7 +188,6 @@ public class Auto {
 						processTimer.set(parameter);
 					}
 					status = RUNNING;
-
 				} else {
 					if (dt.isIdle()) {
 						status = DONE;
