@@ -60,6 +60,7 @@ public class Lift {
     // Lift variables
     private int liftState = LIFT_STOPPED;          //State determines what action is pending and update() manages it.
     private int targetLevel = 0;	               //Level targeted for move.  Used by LevelUp and LevelDown
+
     
 	public void init() {
 		liftState = LIFT_INIT;

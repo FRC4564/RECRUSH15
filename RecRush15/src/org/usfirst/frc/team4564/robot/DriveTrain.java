@@ -42,12 +42,12 @@ public class DriveTrain extends RobotDrive {
     // Forward/Backward, Left/Right and Turn PID Parameters
     private static final double Kp_FB = .08;
     private static final double Kp_LR = .08;
-    private final static double Kp_TURN = 0.08;
-    private static final double MIN_SPEED_FB = 0.2; 	//Min motor power
-    private static final double MIN_SPEED_LR = 0.2; 	//Min motor power
-    private static final double MIN_SPEED_TURN = 0.2;	//Min motor power
-    private static final double MAX_SPEED_FB = 0.75;	//Max motor power
-    private static final double MAX_SPEED_LR = 0.75;	//Max motor power
+    private final static double Kp_TURN = 0.12;
+    private static final double MIN_SPEED_FB = 0.6; 	//Min motor power
+    private static final double MIN_SPEED_LR = 0.6; 	//Min motor power
+    private static final double MIN_SPEED_TURN = 0.5;	//Min motor power
+    private static final double MAX_SPEED_FB = 0.90;	//Max motor power
+    private static final double MAX_SPEED_LR = 0.90;	//Max motor power
     private static final double MAX_SPEED_TURN = 0.5;	//Max motor power
     private static final double TOLERANCE_LR = 0.5;		// allowable tolerance between target and encoder in inches
     private static final double TOLERANCE_FB = 0.5; 	// allowable tolerance between target and encoder in inches
@@ -58,9 +58,9 @@ public class DriveTrain extends RobotDrive {
     private double moveTargetLR = 0; 	// Left/Right target distance relative to current encoder distance
     private double targetHeading = 0; 	// Targeted heading
     // private double heading = 0; 	  	// Current heading
-    private int moveStateFB = 0;        // State is set through movement commands and cleared by PID
-    private int moveStateLR = 0;   	    // State is set through movement commands and cleared by PID
-    private int turnState = 0; 			// State is set through movement commands and cleared by PID
+    private int moveStateFB = STATE_IDLE;        // State is set through movement commands and cleared by PID
+    private int moveStateLR = STATE_IDLE;   	    // State is set through movement commands and cleared by PID
+    private int turnState = STATE_IDLE; 			// State is set through movement commands and cleared by PID
     private double govenor = 1.0; 		// Overall governor of Max power to drive motors for PIDs.  1.0=100% or full power 0.5=50% 
     
     // Gyro-based heading control and PID
@@ -89,6 +89,9 @@ public class DriveTrain extends RobotDrive {
     	moveTargetLR = 0;
     	encoderFB.reset();
     	encoderLR.reset();
+        moveStateFB = STATE_IDLE;
+        moveStateLR = STATE_IDLE;
+        turnState = STATE_IDLE;
     }
     
     // Set speed based on Y value from left joystick and a straight line acceleration curve
@@ -163,9 +166,9 @@ public class DriveTrain extends RobotDrive {
     	drive = deadzone(drive);
     	turn = deadzone(turn);
     	slide = deadzone(slide);
-    	drive = driveAccelCurve(drive, 0.03);
-    	turn = turnAccelCurve(turn, 0.03);
-    	slide = slideAccelCurve(slide, 0.03);
+    	drive = driveAccelCurve(drive, 0.05);
+    	turn = turnAccelCurve(turn, 0.05);
+    	slide = slideAccelCurve(slide, 0.05);
     	// If any input is given, snap out of auto moveState.
     	if (drive != 0 || turn != 0 || slide != 0) {
     		moveStateFB = STATE_IDLE;
@@ -289,7 +292,6 @@ public class DriveTrain extends RobotDrive {
 	}
  
     public boolean isIdle(){
-    	Common.debug(turnState+" "+moveStateFB+" "+moveStateLR);
     	return (turnState == STATE_IDLE && moveStateFB == STATE_IDLE && moveStateLR == STATE_IDLE);
     }
     

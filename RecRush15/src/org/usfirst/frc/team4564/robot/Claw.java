@@ -21,7 +21,8 @@ public class Claw {
 	private Encoder encoder = new Encoder(Constants.DIO_CARRIAGE_ENCODER_A, Constants.DIO_CARRIAGE_ENCODER_B,
 				  true, EncodingType.k1X);  // Encoder should count positive values as carriage moves down
 	private Solenoid brake = new Solenoid(Constants.SOL_BRAKE);
-	private static final boolean CARRIAGE_LIMIT_PRESSED = true;  //Value of limit switch when pressed.
+    Countdown idleTimer = new Countdown();  //Timer to wait after for PID to be in tolerance before setting to Idle.
+    private static final boolean CARRIAGE_LIMIT_PRESSED = true;  //Value of limit switch when pressed.
 	private static final double CARRIAGE_COUNTS_PER_INCH = 70.09174311;   //Encoder ticks per inch of carriage movement
 	private static final double CARRIAGE_MAX = 54;
 	
@@ -190,7 +191,6 @@ public class Claw {
 				brake.set(true); // Release brake.
 			}
 			setMotor(power);
-			Common.debug("carriageMotorPower" + power);
 			//prevPIDSpeedPower = power;
 		}
 	}
@@ -327,7 +327,6 @@ public class Claw {
 	
 	// Call update method every refresh cycle to update carriage and wrist movement
 	public void update() {
-		// Common.debug("Carriage is in state"+carriageState);
 		
 		if (carriageState == CARRIAGE_INIT) {
 			updateInit();
@@ -340,9 +339,14 @@ public class Claw {
 		} else if (carriageState != CARRIAGE_STOPPED) {
 			targetPIDHeight = Common.constrain(targetPIDHeight, safeMinHeight(), safeMaxHeight());
 			if (Math.abs(carriageHeight() - targetPIDHeight) <= TOLERANCE) {
-				carriageState = CARRIAGE_IDLE;
+				if (idleTimer.done()) {
+					carriageState = CARRIAGE_IDLE;
+				} else {
+					carriageState = CARRIAGE_MOVING;
+				}
 			} else {
 				carriageState = CARRIAGE_MOVING;
+				idleTimer.set(0.5);   // Reset timer for idle delay
 			}
 			PIDHeight();
 			PIDSpeed();

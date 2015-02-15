@@ -33,13 +33,27 @@ public class Auto {
 		lift = l;
 		claw = c;
 
+		//When defining a script be sure the script does the following:
+		//  1. driveInit - to calibrate gyro, set encoders, and zero targets. Suggest waiting a second or two after.
+		//  2. liftInit - to bring lift to bottom and zero encoder - complete before end of auto mode
+		//  3. clawInit - to bring lift to top of mast and zero encoder - complete before end of auto mode
+		//  4. driveSpeed - adjust motors before driving, if less then full speed is desired.
+		//
+		//
 		//Script 1 Testing.
 		script.add("driveInit");
-		script.add("wait 5");
-		script.add("driveForward 50");
-		script.add("driveWait 5");
-		script.add("driveBackward 50");
-		script.add("driveWait 5");
+		script.add("liftInit");
+		script.add("wait 2");
+		script.add("liftlevel 1");
+		script.add("driveForward 83");
+		script.add("driveWait 10");
+		script.add("liftlevel 0");
+		script.add("liftWait");
+		script.add("liftlevel 1");
+		script.add("driveturn 90");
+		script.add("driveWait 10");
+		script.add("driveForward  6");
+		script.add("driveWait 10");
 		playbook.add(new ArrayList<String>(script));
 		//Script 2 Our tote.
 		script.clear();
@@ -96,12 +110,12 @@ public class Auto {
 		processStatus = STARTING;
 		while (! autoTimer.done() && stepIndex < script.size()) {
 			// Run the current step
+			step = script.get(stepIndex);
 			processStatus = runStep(step);
 			// Process the status of the step
 			switch (processStatus) {
 				case DONE:
 					stepIndex += 1;
-					step = script.get(stepIndex);
 					processStatus = STARTING;
 					Common.debug("Command: " + step);
 					break;
@@ -164,6 +178,7 @@ public class Auto {
 			// liftWait <timeout>
 			case "DRIVEBACKWARD":
 				dt.moveForward(-parameter);
+				status = DONE;
 				break;
 			case "DRIVERIGHT":
 				//dt.;
@@ -173,12 +188,15 @@ public class Auto {
 				break;
 			case "DRIVETURN":
 				dt.rotate(parameter);
+				status = DONE;
 				break;
 			case "DRIVEHEADING":
 				dt.rotateTo(parameter);
+				status = DONE;
 				break;
 			case "DRIVESPEED":
 				dt.setSpeed((int) parameter);
+				status = DONE;
 				break;
 			case "DRIVEWAIT":
 				if (processStatus == STARTING) {
@@ -188,7 +206,7 @@ public class Auto {
 						processTimer.set(parameter);
 					}
 					status = RUNNING;
-				} else {
+				} else {  // running status
 					if (dt.isIdle()) {
 						status = DONE;
 					} else if (processTimer.done()) {
@@ -200,10 +218,12 @@ public class Auto {
 				break;
 			case "LIFTINIT":
 				lift.init();
+				status = DONE;
 				break;
 			case "LIFTLEVEL":
 				if (parameter >= 0 && parameter <= 6) {
-				lift.gotoLevel((int)parameter);
+					lift.gotoLevel((int)parameter);
+					status = DONE;
 				} else {
 					status = BADCOMMAND;
 				}
@@ -213,6 +233,7 @@ public class Auto {
 				break;
 			case "LIFTTO":
 				lift.gotoHeight(parameter);
+				status = DONE;
 				break;
 			case "LIFTWAIT":
 				if (processStatus == STARTING) {

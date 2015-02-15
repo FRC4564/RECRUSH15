@@ -137,7 +137,7 @@ public class Robot extends SampleRobot {
         	}
 
         	// MAST
-        	if (joyBin.whenY()) {
+        	if (joyBin.whenY() || joyBin.whenLeftBumper()) {
         		claw.mastToggle();        	
         	} 
         	
@@ -150,7 +150,7 @@ public class Robot extends SampleRobot {
  	        }
  	        
  	        // HAND
- 	        if (joyBin.whenA()) {
+ 	        if (joyBin.whenA() || joyBin.whenRightBumper()) {
  	        	claw.handToggle();
  	        }
  	        
