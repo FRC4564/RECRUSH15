@@ -18,11 +18,13 @@ public class Auto {
 	private ArrayList<ArrayList<String>> playbook = new ArrayList<ArrayList<String>>();
 	// Command processing states
 	private static final int STOPPED = 0;  //No script active
-	private static final int RUNNING = 1;  //Process has begun, awaiting success or fail
-	private static final int DONE = 2;  //Process step completed
-	private static final int TIMEOUT = 3;  //Process step failed with timeout
-	private static final int INVALID = 4;  //Command processor failed to set status properly
-	private static final int BADCOMMAND = 5; //Invalid command
+	private static final int STARTING = 1; //Starting a new process command
+	private static final int RUNNING = 2;  //Process has begun, awaiting success or fail
+	private static final int DONE = 3;  //Process command completed
+	private static final int TIMEOUT = 4;  //Process command failed with timeout
+	private static final int INVALID = 5;  //Command processor failed to set status properly
+	private static final int BADCOMMAND = 6; //Invalid command
+	
 	private int processStatus = STOPPED;
 	private Countdown processTimer = new Countdown();  //Some steps require a timer			
 	// Constructor
@@ -82,13 +84,14 @@ public class Auto {
 		script = playbook.get(selectedPlay - 1);		// Load the script from the playbook
 		Common.debug("Auto Script:" + script);
 		Common.debug("Command: "+script.get(stepIndex));
-		
+		processStatus = STARTING;
 		while (! autoTimer.done()) {
 			if (stepIndex < script.size()) {
 				processStatus = runStep(script.get(stepIndex)); 
 				switch (processStatus) {
 					case DONE:
 						stepIndex += 1;
+						processStatus = STARTING;
 						Common.debug("Command: " + script.get(stepIndex));
 						break;
 					case TIMEOUT:
@@ -155,7 +158,15 @@ public class Auto {
 				dt.rotateTo(parameter);
 				break;
 			case "DRIVEWAIT":
-				if (processStatus == RUNNING) {
+				if (processStatus == STARTING) {
+					if (parameter == 0) {
+						processTimer.set(999);
+					} else {
+						processTimer.set(parameter);
+					}
+					status = RUNNING;
+
+				} else {
 					if (dt.isIdle()) {
 						status = DONE;
 					} else if (processTimer.done()) {
@@ -163,13 +174,6 @@ public class Auto {
 					} else {
 						status = RUNNING;
 					}
-				} else {
-					if (parameter == 0) {
-						processTimer.set(999);
-					} else {
-						processTimer.set(parameter);
-					}
-					status = RUNNING;
 				}
 				break;
 			case "LIFTINIT":
@@ -189,7 +193,14 @@ public class Auto {
 				lift.gotoHeight(parameter);
 				break;
 			case "LIFTWAIT":
-				if (processStatus == RUNNING) {
+				if (processStatus == STARTING) {
+					if (parameter == 0) {
+						processTimer.set(999);
+					} else {
+						processTimer.set(parameter);
+					}
+					status = RUNNING;
+				} else {
 					if (lift.isIdle()) {
 						status = DONE;
 					} else if (processTimer.done()) {
@@ -197,25 +208,18 @@ public class Auto {
 					} else {
 						status = RUNNING;
 					}	
-				} else {
-					if (parameter == 0) {
-						processTimer.set(999);
-					} else {
-						processTimer.set(parameter);
-					}
-					status = RUNNING;
 				}
 				break;
 			case "WAIT":
-				if (processStatus == RUNNING) {
+				if (processStatus == STARTING) {
+					processTimer.set(parameter);
+					status = RUNNING;
+				} else {
 					if (processTimer.done()) {
 						status = DONE;
 					} else {
 						status = RUNNING;
 					}
-				} else {
-					processTimer.set(parameter);
-					status = RUNNING;
 				}
 				break;
 			// Unknown command

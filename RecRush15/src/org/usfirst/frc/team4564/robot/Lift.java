@@ -266,17 +266,16 @@ public class Lift {
 		} else {
 			updateMove();
 		}
-		SmartDashboard.putNumber("Lift state", liftState);
-		SmartDashboard.putBoolean("Lower Limit", lowerLimit.get() == LOWER_LIMIT_PRESSED);
-		SmartDashboard.putNumber("Lift encoder",encoder.get());
-		SmartDashboard.putNumber("Lift encoder inches",encoder.getDistance());
-		SmartDashboard.putNumber("Calculated height", getHeight());
-		SmartDashboard.putNumber("Target height", targetPIDHeight);
-		SmartDashboard.putNumber("Target velocity", targetPIDVelocity);		
-		SmartDashboard.putNumber("Target Level", targetLevel);		
+		
+		//SmartDashboard.putNumber("Lift state", liftState);
+		//SmartDashboard.putBoolean("Lower Limit", lowerLimit.get() == LOWER_LIMIT_PRESSED);
+		//SmartDashboard.putNumber("Lift encoder",encoder.get());
+		//SmartDashboard.putNumber("Lift encoder inches",encoder.getDistance());
+		//SmartDashboard.putNumber("Calculated height", getHeight());
+		//SmartDashboard.putNumber("Target height", targetPIDHeight);
+		//SmartDashboard.putNumber("Target velocity", targetPIDVelocity);		
+		//SmartDashboard.putNumber("Target Level", targetLevel);		
 
-		
-		
 	}
 	// Is lift idle - Idle means lift is initialized and ready for a move request.
 	public boolean isIdle() {

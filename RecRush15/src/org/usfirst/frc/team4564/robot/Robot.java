@@ -101,7 +101,7 @@ public class Robot extends SampleRobot {
         		}
         	}
         	
-        	if (joyTote.whenStart()) {					
+        	if (joyTote.whenStart() || joyBin.whenStart()) {					
         		Common.debug("Initializing Lift and Claw");
         		lift.init();
         		claw.init();
