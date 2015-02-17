@@ -92,10 +92,16 @@ public class Lift {
 		liftMotor.set(power);
 	}
 	
+	// Force motor power to 0 when auto ends.
+	public void stop() {
+		setMotor(0);
+	}
+	
 	// Return lift height in inches above floor as measured from top of the lifting point
 	public double getHeight() {
 		return encoder.getDistance() + LIFT_MIN_HEIGHT;	
 	}
+	
 
 	// Governs the Velocity of the lift using a PID and encoder getRate().
 	// Follows the value of targetPIDVelocity, which is in inches per second.
@@ -206,6 +212,11 @@ public class Lift {
 		gotoHeight(levelToInches(targetLevel));
 	}
 	
+	public void bottom() {
+		Common.debug("Lift to lowest hieght");
+		gotoHeight(LIFT_MIN_HEIGHT);
+	}
+	
 	// Move lift up one level
 	public void levelUp(){
 		Common.debug("Level up");
@@ -273,7 +284,7 @@ public class Lift {
 		//SmartDashboard.putNumber("Lift encoder",encoder.get());
 		//SmartDashboard.putNumber("Lift encoder inches",encoder.getDistance());
 		//SmartDashboard.putNumber("Calculated height", getHeight());
-		//SmartDashboard.putNumber("Target height", targetPIDHeight);
+		SmartDashboard.putNumber("Target height", targetPIDHeight);
 		//SmartDashboard.putNumber("Target velocity", targetPIDVelocity);		
 		//SmartDashboard.putNumber("Target Level", targetLevel);		
 

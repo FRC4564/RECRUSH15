@@ -2,6 +2,7 @@ package org.usfirst.frc.team4564.robot;
 
 import java.util.ArrayList;
 
+import edu.wpi.first.wpilibj.Gyro;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -11,6 +12,7 @@ public class Auto {
 	private DriveTrain dt;
 	private Lift lift;
 	private Claw claw;
+	Gyro gyro = new Gyro(Constants.ANA_TILT);
 	//Script Functions
 	private Countdown autoTimer;  //Make sure auto run is no longer than 15 seconds
 	private int selectedPlay = 1;  // Play # from playbook to run, stating at 1
@@ -24,7 +26,6 @@ public class Auto {
 	private static final int TIMEOUT = 4;  //Process command failed with timeout
 	private static final int INVALID = 5;  //Command processor failed to set status properly
 	private static final int BADCOMMAND = 6; //Invalid command
-	
 	private int processStatus = STOPPED;
 	private Countdown processTimer = new Countdown();  //Some steps require a timer			
 	// Constructor
@@ -32,39 +33,55 @@ public class Auto {
 		dt = d;
 		lift = l;
 		claw = c;
-
+		gyro.reset();
+		
 		//When defining a script be sure the script does the following:
 		//  1. driveInit - to calibrate gyro, set encoders, and zero targets. Suggest waiting a second or two after.
 		//  2. liftInit - to bring lift to bottom and zero encoder - complete before end of auto mode
 		//  3. clawInit - to bring lift to top of mast and zero encoder - complete before end of auto mode
 		//  4. driveSpeed - adjust motors before driving, if less then full speed is desired.
-		//
-		//
+		
 		//Script 1 Testing.
+
 		script.add("driveInit");
 		script.add("liftInit");
-		script.add("wait 2");
-		script.add("liftlevel 1");
+		script.add("liftWait");
+		script.add("mastIn");
+		script.add("handClose");
+		//script.add("wait 2");
+		script.add("liftlevel 2");
 		script.add("driveForward 83");
 		script.add("driveWait 10");
-		script.add("liftlevel 0");
-		script.add("liftWait");
-		script.add("liftlevel 1");
+		//script.add("wait 2");
+		script.add("liftBottom");
+		script.add("liftWait 3");
+		script.add("liftlevel 2");
+		script.add("Wait 2");
 		script.add("driveturn 90");
 		script.add("driveWait 10");
-		script.add("driveForward  6");
+		script.add("driveSpeed 85");
+		script.add("driveForward 110");
 		script.add("driveWait 10");
+		script.add("clawInit");
+		script.add("carriageWait");
 		playbook.add(new ArrayList<String>(script));
 		//Script 2 Our tote.
 		script.clear();
 		script.add("driveInit");
-		script.add("clawInit");
-		script.add("liftInit");
-		script.add("liftWait 5");
-		script.add("leftLevel 2");
-		script.add("liftWait 5");
-
-		//playbook.add(new ArrayList<String>(script));
+		script.add("wait 1");
+		script.add("driveTurn 90");
+		script.add("wait 5");
+		script.add("driveTurn 90");
+		script.add("wait 5");
+		script.add("driveTurn 90");
+		script.add("wait 5");
+		script.add("driveTurn -270");
+		script.add("driveWait 5");
+		script.add("wait 5");
+		playbook.add(new ArrayList<String>(script));
+		// Special secret script
+		//script.clear();
+		
 		//script.clear();
 		//Script 3 Our bin.
 		//Script 4 Our bin and tote.
@@ -80,12 +97,14 @@ public class Auto {
 	public void nextPlay() {
 		if (selectedPlay < playbook.size())
 			selectedPlay += 1;
+			Common.debug("Play number: " + selectedPlay);
 	}
 	
 	// Decrement the playbook selected play number, keeping it from going below zero.
 	public void prevPlay() {
-		if (selectedPlay > 0)
+		if (selectedPlay > 1)
 			selectedPlay -= 1;
+			Common.debug("Play number: " + selectedPlay);
 	}
 	
 	// Returns the currently selected play number
@@ -97,50 +116,69 @@ public class Auto {
 	// Error conditions during the run will halt step execution and stop the run.
 	public void run() {
 		int stepIndex = 0;  			        // Pointer to the current step with a play script.
+		boolean done = false;					// Loop through commands until finished or errored
 		String step;							// Current script step 
 		Countdown autoTimer = new Countdown();	// Countdown timer to make sure the play completes within...
+		gyro.reset();
 		
 // ****** Changed from 14.9 to 60 for testing
 		autoTimer.set(60.0);						// ...the 15 second autonomous period
 		
 		script = playbook.get(selectedPlay - 1);		// Load the script from the playbook
 		Common.debug("Auto Script:" + script);
-		Common.debug("Command: "+script.get(stepIndex));
-		step = script.get(stepIndex);
 		processStatus = STARTING;
-		while (! autoTimer.done() && stepIndex < script.size()) {
-			// Run the current step
-			step = script.get(stepIndex);
-			processStatus = runStep(step);
-			// Process the status of the step
-			switch (processStatus) {
-				case DONE:
-					stepIndex += 1;
-					processStatus = STARTING;
-					Common.debug("Command: " + step);
-					break;
-				case TIMEOUT:
-					Common.debug("AutoRun: TIMEOUT on step "+ step);
-					stepIndex = 999;
-					break;
-				case INVALID:
-					Common.debug("AutoRun: INVALID STATUS - runCommand didn't set a status on step "+ step);
-					stepIndex = 999;
-					break;
-				case BADCOMMAND:
-					Common.debug("AutoRun: UNKNOWN COMMAND VERB/PARAMETER on step "+ step);
-					stepIndex = 999;
-					break;
+		step = script.get(stepIndex);
+		Common.debug("Command: "+step);
+		while (!done) {
+			// See if loop should stop
+			if (autoTimer.done()) {
+				Common.debug("AUTO took too long...had to exit");
+				done = true;
+	/*		} else if (Math.abs(gyro.getAngle()) > 15) {
+				Common.debug("AUTO tilt too high ("+gyro.getAngle()+")...stopping auto");
+				done = true;  */
+			}  else {
+				// Run the current step
+				processStatus = runStep(step);
+				// Process the status of the step
+				switch (processStatus) {
+					case DONE:
+						stepIndex += 1;
+						if (stepIndex >= script.size()) {
+							Common.debug("AUTO script ended normally");
+							done = true;
+						} else {
+							processStatus = STARTING;
+							step = script.get(stepIndex);
+							Common.debug("Command: " + step);
+						}
+						break;
+					case TIMEOUT:
+						Common.debug("AutoRun: TIMEOUT on step "+ step);
+						done = true;
+						break;
+					case INVALID:
+						Common.debug("AutoRun: INVALID STATUS - runCommand didn't set a status on step "+ step);
+						done = true;
+						break;
+					case BADCOMMAND:
+						Common.debug("AutoRun: UNKNOWN COMMAND VERB/PARAMETER on step "+ step);
+						done = true;
+						break;
+				}
+				// Refresh sub-systems every loop cycle
+				dt.update();
+				lift.update();
+				claw.update();
+				Timer.delay(1.0/Constants.REFRESH_RATE * 3);
+				//SmartDashboard.putNumber("Tilt angle", gyro.getAngle());
 			}
-			// Refresh sub-systems every loop cycle
-			dt.update();
-			lift.update();
-			claw.update();
-			Timer.delay(1.0/Constants.REFRESH_RATE);
 		}
 		// Auto run complete - stop robot and be ready for TeleOp
-		dt.hDrive(0,0,0);  //Stop drivetrain movement
+		dt.stop();  //Stop drivetrain movement
 		dt.setSpeed(100);  //Resume full speed operation
+		lift.stop();
+		claw.stop();
 	}
 	
 	// Parse a step into Command and Parameter and execute. 
@@ -229,10 +267,15 @@ public class Auto {
 				}
 				break;
 			case "LIFTRELEASE":
-				//lift.release();
+				lift.releaseTote();
+				status = DONE;
 				break;
 			case "LIFTTO":
 				lift.gotoHeight(parameter);
+				status = DONE;
+				break;
+			case "LIFTBOTTOM":
+				lift.bottom();
 				status = DONE;
 				break;
 			case "LIFTWAIT":
@@ -253,6 +296,50 @@ public class Auto {
 					}	
 				}
 				break;
+			// CLAW COMMANDS
+			case "CLAWINIT":
+				claw.init();
+				status = DONE;
+				break;
+			case "CARRIAGETO":
+				claw.carriageTo(parameter);
+				status = DONE;
+			case "CARRIAGEWAIT":
+				if (processStatus == STARTING) {
+					if (parameter == 0) {
+						processTimer.set(999);
+					} else {
+						processTimer.set(parameter);
+					}
+					status = RUNNING;
+				} else {
+					if (claw.isIdle()) {
+						status = DONE;
+					} else if (processTimer.done()) {
+						status = TIMEOUT;
+					} else {
+						status = RUNNING;
+					}	
+				}
+				break;
+			case "HANDOPEN":
+				claw.handOpen();
+				status = DONE;
+			case "HANDCLOSE":
+				claw.handClose();
+				status = DONE;
+			case "MASTIN":
+				claw.mastOut();
+				status = DONE;
+			case "MASTOUT":
+				claw.mastOut();
+				status = DONE;				
+			case "FOREBARUP":
+				claw.forebarUp();
+				status = DONE;
+			case "FOREBARDOWN":
+				claw.forebarDown();
+				status = DONE;				
 			case "WAIT":
 				if (processStatus == STARTING) {
 					processTimer.set(parameter);

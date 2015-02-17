@@ -9,23 +9,23 @@ double endTime;
 public Countdown() {}
 
 	public void set(double seconds) {
-		startTime = Timer.getFPGATimestamp();
-		endTime = startTime + seconds;
+		startTime = System.currentTimeMillis();
+		endTime = startTime + seconds*1000;
 	}
 
 	// Return countdown time remaining
 	public double time() {
-		double timeLeft = endTime - Timer.getFPGATimestamp();
+		double timeLeft = endTime - System.currentTimeMillis();
 		if (endTime <= 0) {
 			return 0;
 		} else {
-			return timeLeft;
+			return timeLeft/1000;
 		}
 	}
 
 	// Is countdown done?
 	public boolean done() {
-		if (Timer.getFPGATimestamp() > endTime) {
+		if (System.currentTimeMillis() > endTime) {
 			return true;
 		} else {
 			return false;

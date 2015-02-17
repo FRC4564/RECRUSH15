@@ -111,7 +111,7 @@ public class Claw {
 		forebarPostionUp = true;
 	}
 	
-	public void forbarDown() {
+	public void forebarDown() {
 		forebarUpSol.set(FOREBAR_SOL_DISABLE);
 		forebarDownSol.set(FOREBAR_SOL_ENABLE);
 		forebarPostionUp = false;
@@ -164,6 +164,11 @@ public class Claw {
 		}
 		// Power the motor
 		carriageMotor.set(power);
+	}
+	
+	// Force motor stop, used to end autonomous
+	public void stop() { 
+		setMotor(0);		
 	}
 		
 	// Move carriage at target speed.  Brake is released/engaged based on speed.
@@ -233,6 +238,12 @@ public class Claw {
 				carriageState = CARRIAGE_FREE;
 			}
 		}
+	}
+	
+	// Move carriage to a specific height (0 at bottom)
+	public void carriageTo(double inches) {
+		targetPIDHeight = Common.constrain(inches, 0, CARRIAGE_MAX);
+		carriageState = CARRIAGE_MOVING;
 	}
 	
 	// Is lift idle - Idle means lift is initialized and ready for a move request.
@@ -314,6 +325,7 @@ public class Claw {
 		wristMotor.set(0);
 	}
 	
+
 	// Move carriage upward until limit switch and then set to Idle state
 	private void updateInit() {
 		if (carriageLimit.get() == CARRIAGE_LIMIT_PRESSED) {

@@ -58,7 +58,7 @@ public class Robot extends SampleRobot {
         		Common.debug("Decrementing play number");
         		 auto.prevPlay();
         	}
-//        	SmartDashboard.putNumber("Play #", auto.getPlay());
+    		SmartDashboard.putNumber("Play Number: ",auto.getPlay());
         	Timer.delay(.1);
         } 
         Common.debug("Ending: disabled mode");
@@ -108,7 +108,7 @@ public class Robot extends SampleRobot {
         	}
 
         	// COMPRESSOR
-        	if (joyTote.whenSelect()) {					// Toggle compressor
+        	if (joyTote.whenSelect() || joyBin.whenSelect()) {					// Toggle compressor
         		if (comp.enabled() == true) {
         			comp.stop();
         		} if (comp.enabled() == false) {
@@ -131,7 +131,7 @@ public class Robot extends SampleRobot {
         	if (joyBin.dpadUp()) {						// Forebar is tri-state: Up, Down or Stopped
         		claw.forebarUp();
         	} else if (joyBin.dpadDown()) {
-        		claw.forbarDown();
+        		claw.forebarDown();
         	} else {
         		claw.forebarStop();
         	}

@@ -31,6 +31,9 @@ public class Constants {
 	public static final int SOL_FOREBAR_DOWN = 6;
 	public static final int SOL_FOREBAR_UP = 7;
 	
+	//Analogs
+	public static final int ANA_HEADING = 0;
+	public static final int ANA_TILT = 1;
 	
 	//MISCELLANEOUS
 	public static final double REFRESH_RATE = 100;  //Refresh rate for main loop and all related subsystem updates

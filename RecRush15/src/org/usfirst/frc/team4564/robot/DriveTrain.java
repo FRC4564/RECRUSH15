@@ -36,19 +36,19 @@ public class DriveTrain extends RobotDrive {
     		true, EncodingType.k1X);
     private Encoder encoderLR = new Encoder(Constants.DIO_DRIVE_LR_ENCODER_A, Constants.DIO_DRIVE_LR_ENCODER_B,
     		true, EncodingType.k1X);
-    private static final double COUNTS_PER_INCH_FB = 37.865;
+    private static final double COUNTS_PER_INCH_FB = 42.939;
     private static final double COUNTS_PER_INCH_LR = 250 / 12.5663; //wheel circumference = 12.5663 / 1 rev = 250 counts
     
     // Forward/Backward, Left/Right and Turn PID Parameters
     private static final double Kp_FB = .08;
     private static final double Kp_LR = .08;
-    private final static double Kp_TURN = 0.12;
-    private static final double MIN_SPEED_FB = 0.6; 	//Min motor power
+    private final static double Kp_TURN = 0.05;
+    private static final double MIN_SPEED_FB = 0.55; 	//Min motor power
     private static final double MIN_SPEED_LR = 0.6; 	//Min motor power
-    private static final double MIN_SPEED_TURN = 0.5;	//Min motor power
+    private static final double MIN_SPEED_TURN = 0.55;	//Min motor power
     private static final double MAX_SPEED_FB = 0.90;	//Max motor power
     private static final double MAX_SPEED_LR = 0.90;	//Max motor power
-    private static final double MAX_SPEED_TURN = 0.5;	//Max motor power
+    private static final double MAX_SPEED_TURN = 1.0;	//Max motor power
     private static final double TOLERANCE_LR = 0.5;		// allowable tolerance between target and encoder in inches
     private static final double TOLERANCE_FB = 0.5; 	// allowable tolerance between target and encoder in inches
     private static final double TOLERANCE_TURN = 1; 	// allowable tolerance between target and encoder in degrees
@@ -64,7 +64,7 @@ public class DriveTrain extends RobotDrive {
     private double govenor = 1.0; 		// Overall governor of Max power to drive motors for PIDs.  1.0=100% or full power 0.5=50% 
     
     // Gyro-based heading control and PID
-    Gyro gyro = new Gyro(0);
+    Gyro gyro = new Gyro(Constants.ANA_HEADING);
     private static final double GYRO_CALIBRATION = 0.00669; // Volts/sec/degree
     private double prevTurn = 0;       // Used to monitor hDrive Trun input to control auto heading hold
 
@@ -147,11 +147,23 @@ public class DriveTrain extends RobotDrive {
     
     // Set drive motors, with scaling and mixing for slide motors.
     private void setDrive(double drive, double turn, double slide) {
-    	slide = slide * 0.4;
-    	turn = turn * 0.7;
+    	slide = slide * 0.6;
+    	turn = turn * 0.85;
     	arcadeDrive(drive, turn);
     	frontC.set(-slide - turn * 0.1);
     	rearC.set(slide - turn * 0.1);
+    }
+    
+    public void stop() {
+    	turnState = STATE_IDLE;
+    	moveStateFB = STATE_IDLE;
+    	moveStateLR = STATE_IDLE;
+    	targetHeading = gyro.getAngle();
+    	encoderFB.reset();
+    	encoderLR.reset();
+    	moveTargetFB = 0;
+    	moveTargetLR = 0;
+    	
     }
     
     public void arcadeDriver(double drive, double turn) {
@@ -166,26 +178,26 @@ public class DriveTrain extends RobotDrive {
     	drive = deadzone(drive);
     	turn = deadzone(turn);
     	slide = deadzone(slide);
-    	drive = driveAccelCurve(drive, 0.05);
-    	turn = turnAccelCurve(turn, 0.05);
-    	slide = slideAccelCurve(slide, 0.05);
+    	drive = driveAccelCurve(drive, 0.06);
+    	turn = turnAccelCurve(turn, 0.1);
+    	slide = slideAccelCurve(slide, 0.1);
     	// If any input is given, snap out of auto moveState.
     	if (drive != 0 || turn != 0 || slide != 0) {
     		moveStateFB = STATE_IDLE;
     	}
     	// Heading hold logic
     	if (turn == 0) {     		// Auto heading hold
-    		if (prevTurn != 0) {
+    	/*	if (prevTurn != 0) {
     			targetHeading = gyro.getAngle();
     			prevTurn = 0;
     		}
-    		turn = PIDTurn();
+    		turn = PIDTurn(); */
     	} else {	     			// Otherwise, keep track of heading as turn input is given
     		prevTurn = turn;
     	}
     	// Drive 
 		setDrive(drive,turn,slide);
-		
+		SmartDashboard.putNumber("encoderFB raw ", encoderFB.get() );
     }
     	
 	// Normalizes a heading to be within 0 to 360 degrees.
@@ -253,6 +265,10 @@ public class DriveTrain extends RobotDrive {
 	    double error = 0;
 	    double P = 0;
 	    double moveSpeed = 0;
+	    // If Idle, then force target to actual
+	    if (moveStateFB == STATE_IDLE) {
+	    	moveTargetFB = encoderFB.getDistance();
+	    }
 		// Calculate PID
 		error = moveTargetFB - encoderFB.getDistance();
 		// Are we there yet?
@@ -263,10 +279,7 @@ public class DriveTrain extends RobotDrive {
 			moveStateFB = STATE_IDLE;
 			moveSpeed = 0;
 		}
-		SmartDashboard.putNumber("moveSpeedFB", -moveSpeed );
-		SmartDashboard.putNumber("moveTargetFB", moveTargetFB );
-		SmartDashboard.putNumber("encoderFB inches", encoderFB.getDistance() );
-		SmartDashboard.putNumber("moveStateFB", moveStateFB);
+		// SmartDashboard.putNumber("moveSpeedFB", -moveSpeed );
 		return -moveSpeed;  //Invert required since negative values drive forward.
 	}
     
@@ -275,6 +288,10 @@ public class DriveTrain extends RobotDrive {
 	    double error = 0;
 	    double P = 0;
 	    double moveSpeed = 0;
+	    // If Idle, then force target to actual
+	    if (moveStateLR == STATE_IDLE) {
+	    	moveTargetLR = encoderLR.getDistance();
+	    }
 		// Calculate PID
 		error = moveTargetLR - encoderLR.getDistance();
 		// Are we there yet?
@@ -323,9 +340,13 @@ public class DriveTrain extends RobotDrive {
     // If using distance movement and rotate commands, call update every robot Refresh cycle
     // to allow PIDs to perform moves.
     public void update() {
-    	double drive = driveAccelCurve(PIDMoveFB(), 0.02);
-    	double turn = turnAccelCurve(PIDTurn(), 0.02);
-    	double slide = slideAccelCurve(PIDMoveLR(), 0.02);
+    	double drive = driveAccelCurve(PIDMoveFB(), 0.1);
+    	double turn = turnAccelCurve(PIDTurn(), 0.1);
+    	double slide = slideAccelCurve(PIDMoveLR(), 0.1);
+		SmartDashboard.putNumber("turnState", turnState );
+   		SmartDashboard.putNumber("targetHeading", targetHeading );
+		SmartDashboard.putNumber("current heading", gyro.getAngle() );
+		SmartDashboard.putNumber("turn", turn);
    		setDrive(drive,turn,slide);
     }
     
