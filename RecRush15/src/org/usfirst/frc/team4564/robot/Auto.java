@@ -1,7 +1,7 @@
 package org.usfirst.frc.team4564.robot;
 
 import java.util.ArrayList;
-
+import java.io.*;
 import edu.wpi.first.wpilibj.Gyro;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -111,6 +111,77 @@ public class Auto {
 	public int getPlay() {
 		return selectedPlay;
 	}
+	
+	// Load playbook from file
+    public static void load(String file) {
+        ArrayList<String> script = new ArrayList<String>();
+	    ArrayList<ArrayList<String>> playbook = new ArrayList<ArrayList<String>>();
+        String command;
+        boolean failed = false;
+        try {
+            // Show current directory
+            String current = new java.io.File( "." ).getCanonicalPath();
+            System.out.println("Current Directory: " + current);
+            // Open script file and process each line
+            String line;
+            FileReader fileReader = new FileReader("test.txt");
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            // Process each line of the file
+           while((line = bufferedReader.readLine()) != null && ! failed) {
+               String result = parseLine(line);
+               command = result.split(" ")[0].toUpperCase();  
+               if (command == "ERROR") {
+                   System.out.println("Stopping Script Load");
+                   failed = true;
+               } else if (command.length() > 0) {
+                   if (command.equals("SCRIPT")) { //Start of a Script?
+                       System.out.println("Start of script "+result);
+                       if (script.size() > 0) {  // If we already have a script started, save it and start anew
+                           playbook.add(new ArrayList<String>(script));
+                           script.clear();
+                       }
+                   }
+                   script.add(result);  // Add command to script
+                } 
+            }
+            // Finish up
+            if (script.size() > 0) {  //Save the final play script, if we have one
+                       playbook.add(new ArrayList<String>(script));
+            }
+            System.out.println(playbook);
+            bufferedReader.close();
+        }
+        catch(IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    // parseLine load from script file
+    // Validates line, returning line cleaned of extra spaces
+    private static String parseLine(String line) {
+        String COMMANDS="|SCRIPT|DRIVEINIT|LIFTINIT|CLAWINIT|";
+        String command, parameter, result;
+        result = "";
+        line = line.trim();
+        if (line.length() > 0) {      //Process line if not empty
+            if (! line.substring(0,1).equals("#")) {  //Process line if it doesn't being with a comment symbol (#)
+                command = line.split(" ")[0];                         // Parse command off front of line
+                parameter = line.substring(command.length()).trim();  // Remainder of line is the parameter
+                if (COMMANDS.indexOf(command.toUpperCase()) >= 0) {   // If SCRIPT command, then start a new playbook entry
+                    
+                    //System.out.println("GOOD: '"+command+ "' PARAM: " + parameter);
+                    result = command+" "+parameter;
+                } else {
+                    System.out.println("INVALID COMMAND: "+command+ " PARAM: " + line);
+                    result = "ERROR";
+                }
+            }
+        }
+        return result.trim();
+    }
+
+
+	
 	
 	// Run the selected play script, step by step.  Will run until all steps are done, or 15 seconds elapse.
 	// Error conditions during the run will halt step execution and stop the run.
