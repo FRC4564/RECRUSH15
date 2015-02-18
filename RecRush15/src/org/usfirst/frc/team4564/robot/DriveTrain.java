@@ -37,12 +37,12 @@ public class DriveTrain extends RobotDrive {
     private Encoder encoderLR = new Encoder(Constants.DIO_DRIVE_LR_ENCODER_A, Constants.DIO_DRIVE_LR_ENCODER_B,
     		true, EncodingType.k1X);
     private static final double COUNTS_PER_INCH_FB = 42.939;
-    private static final double COUNTS_PER_INCH_LR = 250 / 12.5663; //wheel circumference = 12.5663 / 1 rev = 250 counts
+    private static final double COUNTS_PER_INCH_LR = 7.12359;
     
     // Forward/Backward, Left/Right and Turn PID Parameters
     private static final double Kp_FB = .08;
-    private static final double Kp_LR = .08;
-    private final static double Kp_TURN = 0.05;
+    private static final double Kp_LR = .03;
+    private final static double Kp_TURN = 0.03;
     private static final double MIN_SPEED_FB = 0.55; 	//Min motor power
     private static final double MIN_SPEED_LR = 0.6; 	//Min motor power
     private static final double MIN_SPEED_TURN = 0.55;	//Min motor power
@@ -51,7 +51,7 @@ public class DriveTrain extends RobotDrive {
     private static final double MAX_SPEED_TURN = 1.0;	//Max motor power
     private static final double TOLERANCE_LR = 0.5;		// allowable tolerance between target and encoder in inches
     private static final double TOLERANCE_FB = 0.5; 	// allowable tolerance between target and encoder in inches
-    private static final double TOLERANCE_TURN = 1; 	// allowable tolerance between target and encoder in degrees
+    private static final double TOLERANCE_TURN = 2; 	// allowable tolerance between target and encoder in degrees
     private static final int STATE_IDLE = 0;		// Both FB and LR PIDs are disabled.  Heading hold is still active.
     private static final int STATE_MOVING = 1;		// Movement in progress to reach target 
     private double moveTargetFB = 0; 	// Forward/Backward target distance relative to current encoder distance
@@ -197,7 +197,10 @@ public class DriveTrain extends RobotDrive {
     	}
     	// Drive 
 		setDrive(drive,turn,slide);
-		SmartDashboard.putNumber("encoderFB raw ", encoderFB.get() );
+		//SmartDashboard.putNumber("encoderFB raw ", encoderFB.get() );
+		//SmartDashboard.putNumber("moveTargetLR", moveTargetLR );
+		//SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
+		//SmartDashboard.putNumber("encoderLR", encoderLR.get());
     }
     	
 	// Normalizes a heading to be within 0 to 360 degrees.
@@ -302,9 +305,7 @@ public class DriveTrain extends RobotDrive {
 			moveStateLR = STATE_IDLE;
 			moveSpeed = 0;
 		}
-		//SmartDashboard.putNumber("moveSpeedLR", moveSpeed );
-		//SmartDashboard.putNumber("moveTargetLR", moveTargetLR );
-		//SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
+
 		return moveSpeed;
 	}
  
@@ -341,13 +342,17 @@ public class DriveTrain extends RobotDrive {
     // to allow PIDs to perform moves.
     public void update() {
     	double drive = driveAccelCurve(PIDMoveFB(), 0.1);
-    	double turn = turnAccelCurve(PIDTurn(), 0.1);
+    	double turn = turnAccelCurve(PIDTurn(), 1.0);
     	double slide = slideAccelCurve(PIDMoveLR(), 0.1);
-		SmartDashboard.putNumber("turnState", turnState );
-   		SmartDashboard.putNumber("targetHeading", targetHeading );
-		SmartDashboard.putNumber("current heading", gyro.getAngle() );
-		SmartDashboard.putNumber("turn", turn);
    		setDrive(drive,turn,slide);
+		SmartDashboard.putNumber("turnState", turnState );
+   		//SmartDashboard.putNumber("targetHeading", targetHeading );
+		//SmartDashboard.putNumber("current heading", gyro.getAngle() );
+		//SmartDashboard.putNumber("turn", turn);
+		//SmartDashboard.putNumber("moveSpeedLR", moveSpeed );
+		SmartDashboard.putNumber("moveTargetLR", moveTargetLR );
+		SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
+		SmartDashboard.putNumber("encoderLR", encoderLR.get());
     }
     
     // Reset gyro to 0 degrees.

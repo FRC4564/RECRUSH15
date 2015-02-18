@@ -27,7 +27,6 @@ public class Robot extends SampleRobot {
     Lift lift = new Lift();
     Claw claw = new Claw();
 
-
     public Robot() {
     	Common.debug("Constructing drive train");
         dt = new DriveTrain();
@@ -58,20 +57,23 @@ public class Robot extends SampleRobot {
         		Common.debug("Decrementing play number");
         		 auto.prevPlay();
         	}
+        	if (joyTote.whenSelect()) {
+        		 auto.load("playbook.txt");
+        	}
+        		
     		SmartDashboard.putNumber("Play Number: ",auto.getPlay());
         	Timer.delay(.1);
         } 
         Common.debug("Ending: disabled mode");
     }
-    
 
+    
     // AUTONOMOUS MODE
     public void autonomous() {
         dt.setSafetyEnabled(false);
         Common.debug("Starting Auto Play #"+auto.getPlay());
         auto.run();
     }
-
 
     // TELEOP MODE
     public void operatorControl() {
@@ -163,8 +165,6 @@ public class Robot extends SampleRobot {
  	        	claw.wristStop();
  	        }
  	        
- 	    
- 	        	
         	// UPDATE SUBSYSTEMS
         	lift.update();
         	claw.update();
@@ -186,7 +186,7 @@ public class Robot extends SampleRobot {
     	if (claw.isIdle() != true) {
     		claw.init();
     	}
-    	dt.moveForward(60);
+
     	while (isEnabled()) {
     	   	dt.update();
 	    	lift.update();

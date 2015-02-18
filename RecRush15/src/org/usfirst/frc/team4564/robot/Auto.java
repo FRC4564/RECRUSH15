@@ -2,7 +2,10 @@ package org.usfirst.frc.team4564.robot;
 
 import java.util.ArrayList;
 import java.io.*;
+
 import edu.wpi.first.wpilibj.Gyro;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.RobotState;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -12,13 +15,13 @@ public class Auto {
 	private DriveTrain dt;
 	private Lift lift;
 	private Claw claw;
-	Gyro gyro = new Gyro(Constants.ANA_TILT);
 	//Script Functions
 	private Countdown autoTimer;  //Make sure auto run is no longer than 15 seconds
 	private int selectedPlay = 1;  // Play # from playbook to run, stating at 1
 	ArrayList<String> script = new ArrayList<String>();
 	private ArrayList<ArrayList<String>> playbook = new ArrayList<ArrayList<String>>();
 	// Command processing states
+    private static final String COMMANDS="|SCRIPT|DRIVEINIT|LIFTINIT|CLAWINIT|DRIVESPEED|DRIVEFORWARD|DRIVEBACKWARD|DRIVELEFT|DRIVERIGHT|DRIVETURN|DRIVEHEADING|DRIVEWAIT|LIFTBOTTOM|LIFTLEVEL|LIFTRELEASE|LIFTTO|LIFTWAIT|HANDOPEN|HANDCLOSE|MASTIN|MASTOUT|FOREBARUP|FOREBARDOWN|CARRIAGETO|CARRIAGEWAIT";
 	private static final int STOPPED = 0;  //No script active
 	private static final int STARTING = 1; //Starting a new process command
 	private static final int RUNNING = 2;  //Process has begun, awaiting success or fail
@@ -33,7 +36,6 @@ public class Auto {
 		dt = d;
 		lift = l;
 		claw = c;
-		gyro.reset();
 		
 		//When defining a script be sure the script does the following:
 		//  1. driveInit - to calibrate gyro, set encoders, and zero targets. Suggest waiting a second or two after.
@@ -113,18 +115,20 @@ public class Auto {
 	}
 	
 	// Load playbook from file
-    public static void load(String file) {
-        ArrayList<String> script = new ArrayList<String>();
-	    ArrayList<ArrayList<String>> playbook = new ArrayList<ArrayList<String>>();
+    public void load(String file) {
+      //  ArrayList<String> script = new ArrayList<String>();
+	  //  ArrayList<ArrayList<String>> playbook = new ArrayList<ArrayList<String>>();
         String command;
         boolean failed = false;
+        playbook.clear();
+        script.clear();
         try {
             // Show current directory
             String current = new java.io.File( "." ).getCanonicalPath();
             System.out.println("Current Directory: " + current);
             // Open script file and process each line
             String line;
-            FileReader fileReader = new FileReader("test.txt");
+            FileReader fileReader = new FileReader("/home/lvuser/" + file);
             BufferedReader bufferedReader = new BufferedReader(fileReader);
             // Process each line of the file
            while((line = bufferedReader.readLine()) != null && ! failed) {
@@ -156,10 +160,9 @@ public class Auto {
         }
     }
     
-    // parseLine load from script file
+    // parseLine loaded from script file
     // Validates line, returning line cleaned of extra spaces
     private static String parseLine(String line) {
-        String COMMANDS="|SCRIPT|DRIVEINIT|LIFTINIT|CLAWINIT|";
         String command, parameter, result;
         result = "";
         line = line.trim();
@@ -180,9 +183,6 @@ public class Auto {
         return result.trim();
     }
 
-
-	
-	
 	// Run the selected play script, step by step.  Will run until all steps are done, or 15 seconds elapse.
 	// Error conditions during the run will halt step execution and stop the run.
 	public void run() {
@@ -190,7 +190,6 @@ public class Auto {
 		boolean done = false;					// Loop through commands until finished or errored
 		String step;							// Current script step 
 		Countdown autoTimer = new Countdown();	// Countdown timer to make sure the play completes within...
-		gyro.reset();
 		
 // ****** Changed from 14.9 to 60 for testing
 		autoTimer.set(60.0);						// ...the 15 second autonomous period
@@ -200,14 +199,11 @@ public class Auto {
 		processStatus = STARTING;
 		step = script.get(stepIndex);
 		Common.debug("Command: "+step);
-		while (!done) {
+		while (!done && RobotState.isEnabled()) {
 			// See if loop should stop
 			if (autoTimer.done()) {
 				Common.debug("AUTO took too long...had to exit");
 				done = true;
-	/*		} else if (Math.abs(gyro.getAngle()) > 15) {
-				Common.debug("AUTO tilt too high ("+gyro.getAngle()+")...stopping auto");
-				done = true;  */
 			}  else {
 				// Run the current step
 				processStatus = runStep(step);
@@ -256,14 +252,15 @@ public class Auto {
 	// Returns result of the runCommand.
 	private int runStep(String step) {
 		String command;
-		double parameter;
+		String parameter;
 		command = step.split(" ")[0];
 		command = command.toUpperCase();
 		if (step.indexOf(" ") > 0) {
-			parameter = Double.valueOf(step.split(" ")[1]);
-			return runCommand(command, parameter);
+			parameter = step.split(" ")[1];
+		} else {
+			parameter = "0";
 		}
-		return runCommand(command, 0);
+		return runCommand(command, parameter);
 	}
 
 	// Runs the command, based on the current processStatus and returns an updated status.
@@ -271,9 +268,12 @@ public class Auto {
 	// For commands that require multiple cycles to complete, the status will be set to RUNNING until DONE.
 	// A status of INVALID signifies a logic error and runCommand itself.
 	// A status of BADCOMMAND indicates unknown command verb or bad parameter for command.
-	private int runCommand(String command,double parameter)  {
+	private int runCommand(String command,String parameter)  {
 		int status = INVALID;  //Status will change if command processes properly
 		switch (command) {
+			case "SCRIPT":
+				status = DONE;
+				break;
 			// driveInit
 			case "DRIVEINIT":
 				dt.init();
@@ -281,38 +281,40 @@ public class Auto {
 				break;
 			// driveForward <inches>	
 			case "DRIVEFORWARD":
-				dt.moveForward(parameter);
+				dt.moveForward(Double.parseDouble(parameter));
 				status = DONE;
 				break;
 			// liftWait <timeout>
 			case "DRIVEBACKWARD":
-				dt.moveForward(-parameter);
+				dt.moveBackward(Double.parseDouble(parameter));
 				status = DONE;
 				break;
 			case "DRIVERIGHT":
-				//dt.;
+				dt.moveRight(Double.parseDouble(parameter));
+				status = DONE;
 				break;
 			case "DRIVELEFT":
-				//dt.;
+				dt.moveLeft(Double.parseDouble(parameter));
+				status = DONE;
 				break;
 			case "DRIVETURN":
-				dt.rotate(parameter);
+				dt.rotate(Double.parseDouble(parameter));
 				status = DONE;
 				break;
 			case "DRIVEHEADING":
-				dt.rotateTo(parameter);
+				dt.rotateTo(Double.parseDouble(parameter));
 				status = DONE;
 				break;
 			case "DRIVESPEED":
-				dt.setSpeed((int) parameter);
+				dt.setSpeed(Integer.parseInt(parameter));
 				status = DONE;
 				break;
 			case "DRIVEWAIT":
 				if (processStatus == STARTING) {
-					if (parameter == 0) {
+					if (Double.parseDouble(parameter) == 0) {
 						processTimer.set(999);
 					} else {
-						processTimer.set(parameter);
+						processTimer.set(Double.parseDouble(parameter));
 					}
 					status = RUNNING;
 				} else {  // running status
@@ -330,8 +332,8 @@ public class Auto {
 				status = DONE;
 				break;
 			case "LIFTLEVEL":
-				if (parameter >= 0 && parameter <= 6) {
-					lift.gotoLevel((int)parameter);
+				if (Integer.parseInt(parameter) >= 0 && Integer.parseInt(parameter) <= 6) {
+					lift.gotoLevel(Integer.parseInt(parameter));
 					status = DONE;
 				} else {
 					status = BADCOMMAND;
@@ -342,7 +344,7 @@ public class Auto {
 				status = DONE;
 				break;
 			case "LIFTTO":
-				lift.gotoHeight(parameter);
+				lift.gotoHeight(Double.parseDouble(parameter));
 				status = DONE;
 				break;
 			case "LIFTBOTTOM":
@@ -351,10 +353,10 @@ public class Auto {
 				break;
 			case "LIFTWAIT":
 				if (processStatus == STARTING) {
-					if (parameter == 0) {
+					if (Double.parseDouble(parameter) == 0) {
 						processTimer.set(999);
 					} else {
-						processTimer.set(parameter);
+						processTimer.set(Double.parseDouble(parameter));
 					}
 					status = RUNNING;
 				} else {
@@ -373,14 +375,15 @@ public class Auto {
 				status = DONE;
 				break;
 			case "CARRIAGETO":
-				claw.carriageTo(parameter);
+				claw.carriageTo(Double.parseDouble(parameter));
 				status = DONE;
+				break;
 			case "CARRIAGEWAIT":
 				if (processStatus == STARTING) {
-					if (parameter == 0) {
+					if (Double.parseDouble(parameter) == 0) {
 						processTimer.set(999);
 					} else {
-						processTimer.set(parameter);
+						processTimer.set(Double.parseDouble(parameter));
 					}
 					status = RUNNING;
 				} else {
@@ -396,24 +399,30 @@ public class Auto {
 			case "HANDOPEN":
 				claw.handOpen();
 				status = DONE;
+				break;
 			case "HANDCLOSE":
 				claw.handClose();
 				status = DONE;
+				break;
 			case "MASTIN":
 				claw.mastOut();
 				status = DONE;
+				break;
 			case "MASTOUT":
 				claw.mastOut();
 				status = DONE;				
+				break;
 			case "FOREBARUP":
 				claw.forebarUp();
 				status = DONE;
+				break;
 			case "FOREBARDOWN":
 				claw.forebarDown();
 				status = DONE;				
+				break;
 			case "WAIT":
 				if (processStatus == STARTING) {
-					processTimer.set(parameter);
+					processTimer.set(Double.parseDouble(parameter));
 					status = RUNNING;
 				} else {
 					if (processTimer.done()) {

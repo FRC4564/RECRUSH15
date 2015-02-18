@@ -284,7 +284,7 @@ public class Lift {
 		//SmartDashboard.putNumber("Lift encoder",encoder.get());
 		//SmartDashboard.putNumber("Lift encoder inches",encoder.getDistance());
 		//SmartDashboard.putNumber("Calculated height", getHeight());
-		SmartDashboard.putNumber("Target height", targetPIDHeight);
+		//SmartDashboard.putNumber("Target height", targetPIDHeight);
 		//SmartDashboard.putNumber("Target velocity", targetPIDVelocity);		
 		//SmartDashboard.putNumber("Target Level", targetLevel);		
 

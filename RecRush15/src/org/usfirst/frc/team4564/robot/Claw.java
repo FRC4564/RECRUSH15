@@ -278,22 +278,7 @@ public class Claw {
 
 	//Update wrist movement based state.
 	private void wristUpdate() {
-		double power = 0;
-		if (wristState == WRIST_MOVING_HOR) {
-			// Power motor until limit switch is hit
-			if (HORIZONTAL_LIMIT_PRESSED = true); {
-				wristMotor.set(0);
-			} if (HORIZONTAL_LIMIT_PRESSED = ! true); {
-				wristMotor.set(MOTOR_MAX_POWER);
-		} if (wristState == WRIST_MOVING_VER) {
-			if (VERTICAL_LIMIT_PRESSED = true) {
-				wristMotor.set(0);
-			} if (VERTICAL_LIMIT_PRESSED = ! true); {
-				wristMotor.set(-MOTOR_MAX_POWER);
-			}
-		}
 	}
-}
 	
 	public void handOpen() {
 	    handSol.set(HAND_SOL_OPEN);
@@ -349,12 +334,13 @@ public class Claw {
 			targetPIDSpeed = 0;
 			targetPIDHeight = carriageHeight();
 		} else if (carriageState != CARRIAGE_STOPPED) {
-			targetPIDHeight = Common.constrain(targetPIDHeight, safeMinHeight(), safeMaxHeight());
+			//targetPIDHeight = Common.constrain(targetPIDHeight, safeMinHeight(), safeMaxHeight());
 			if (Math.abs(carriageHeight() - targetPIDHeight) <= TOLERANCE) {
 				if (idleTimer.done()) {
 					carriageState = CARRIAGE_IDLE;
 				} else {
 					carriageState = CARRIAGE_MOVING;
+					// idleTimer.set(0.5);   // Reset timer for idle delay
 				}
 			} else {
 				carriageState = CARRIAGE_MOVING;
@@ -363,15 +349,15 @@ public class Claw {
 			PIDHeight();
 			PIDSpeed();
 		}
-		wristUpdate();
-		SmartDashboard.putNumber("Carriage Distance", encoder.getDistance());
-		SmartDashboard.putNumber("Carriage Encoder", encoder.get());
-		SmartDashboard.putBoolean("Carriage Limit?", carriageLimit.get() == CARRIAGE_LIMIT_PRESSED);
+		//wristUpdate();
+		//SmartDashboard.putNumber("Carriage Distance", encoder.getDistance());
+		//SmartDashboard.putNumber("Carriage Encoder", encoder.get());
+		//SmartDashboard.putBoolean("Carriage Limit?", carriageLimit.get() == CARRIAGE_LIMIT_PRESSED);
 		SmartDashboard.putNumber("Carriage Height", carriageHeight());
 		SmartDashboard.putNumber("Carriage tHeight", targetPIDHeight);
-		SmartDashboard.putNumber("Carriage tSpeed", targetPIDSpeed);
-		SmartDashboard.putNumber("Carriage State", carriageState);
-		SmartDashboard.putNumber("Carriage Safe Min", safeMinHeight());
+		//SmartDashboard.putNumber("Carriage tSpeed", targetPIDSpeed);
+		SmartDashboard.putNumber("CarState", carriageState);
+		//SmartDashboard.putNumber("Carriage Safe Min", safeMinHeight());
 		
 		//SmartDashboard.putBoolean("Wrist Limit Hor", horizontalLimit.get() == HORIZONTAL_LIMIT_PRESSED);
 		//SmartDashboard.putBoolean("Wrist Limit Ver", verticalLimit.get() == VERTICAL_LIMIT_PRESSED);
