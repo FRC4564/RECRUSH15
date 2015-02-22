@@ -1,0 +1,104 @@
+Script 1 - Tote and bin pickup
+# Start with claw at top and with the dual tote lift under tote using left-hand hook.
+# Carries tote and bin to AZ, over platform and faces same direction as start orientation.
+
+# Init
+driveInit
+liftInit
+liftWait
+clawInit
+carriageWait
+mastOut
+handClose
+forebarDown
+liftWait 5
+# Lift tote
+liftLevel 3
+liftWait 5
+# Begin rotation and prep for bin pick-up
+driveTurn -90
+driveWait 5
+carriageTo 15
+handOpen
+carriageWait
+wait 1
+# finish rotation and move to pick up
+driveTurn -100
+driveWait
+driveBackward 24
+driveWait
+# Pick up bin
+handClose
+mastIn
+wait 1.2
+carriageTo 28
+liftLevel 1
+wait .5
+# Turn to auto zone
+driveTurn -80
+driveWait
+# Drive over ramp and do final turn
+driveSpeed 85
+driveForward 120
+driveWait
+driveTurn -90
+driveWait
+
+
+Script 2 - 3 tote pickup -testing
+# Start with claw down and dual fork aligned to tote on left hook.
+# Start on right hand side of field.
+
+driveInit
+liftInit
+mastIn
+handClose
+# Lift to level 1
+liftWait
+liftLevel 1
+liftWait
+# Begin left slide and then drive toward 2nd tote
+driveLeft 28
+wait 1.0
+driveForward 93
+wait 2.5
+# Begin right slide as we approach tote
+driveRight 16
+driveWait 3
+# at second tote lift up over it
+liftLevel 2
+liftWait 
+# move over tote
+driveRight 11
+driveWait 
+# lower lift and back up a bit
+driveBackward 2
+liftBottom
+liftWait
+# pickup tote
+driveForward 2
+liftLevel 1
+liftWait
+# approach next tote from left
+driveForward 93
+driveLeft 40
+driveWait
+#
+
+
+Script 3 - testing LR PID
+driveInit
+#driveTurn 90
+#wait 5
+#driveTurn -90 
+#wait 5
+driveRight 40
+wait 10
+driveLeft 40
+wait 10
+
+
+
+
+
+
