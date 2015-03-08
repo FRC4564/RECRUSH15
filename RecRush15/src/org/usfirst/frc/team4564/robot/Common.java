@@ -32,7 +32,7 @@ public class Common {
 	}
 	
 	public static void debug(String a) {
-		System.out.println(System.currentTimeMillis()/1000+": "+a);
+		System.out.println(System.currentTimeMillis()+": "+a);
 	}
 }
 

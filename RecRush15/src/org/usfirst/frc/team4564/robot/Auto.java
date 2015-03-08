@@ -110,8 +110,13 @@ public class Auto {
 	}
 	
 	// Returns the currently selected play number
-	public int getPlay() {
+	public int getPlayNum() {
 		return selectedPlay;
+	}
+	
+	//Return script name of selected play
+	public String getPlayName() {
+		return playbook.get(selectedPlay - 1).get(0);
 	}
 	
 	// Load playbook from file
@@ -237,8 +242,8 @@ public class Auto {
 				dt.update();
 				lift.update();
 				claw.update();
-				Timer.delay(1.0/Constants.REFRESH_RATE * 3);
-				//SmartDashboard.putNumber("Tilt angle", gyro.getAngle());
+				Timer.delay(1.0/Constants.REFRESH_RATE);
+
 			}
 		}
 		// Auto run complete - stop robot and be ready for TeleOp
@@ -405,7 +410,7 @@ public class Auto {
 				status = DONE;
 				break;
 			case "MASTIN":
-				claw.mastOut();
+				claw.mastIn();
 				status = DONE;
 				break;
 			case "MASTOUT":

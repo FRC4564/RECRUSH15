@@ -33,13 +33,14 @@ public class Robot extends SampleRobot {
         dt.setSafetyEnabled(false);  //Safety will be enabled for TeleOp
         dt.setExpiration(0.1);   
         auto = new Auto(dt, lift, claw);
+        auto.load("playbook.txt");
     }
     
     // ROBOTINIT
     // Runs once, after robot is booted
     public void robotInit() {
     	Common.debug("Starting: robotInit()");
-    	comp.stop();
+    	comp.start();
         dt.init();
     }
     
@@ -48,20 +49,21 @@ public class Robot extends SampleRobot {
     public void disabled() {
     	Common.debug("Starting: disabled mode");
         while (isEnabled() == false) {
-        	if (joyTote.whenDpadUp()) {
+        	if (joyTote.whenDpadUp() || joyBin.whenDpadUp()) {
         		Common.debug("Incrementing play number");
         		auto.nextPlay();
         	}
         	
-        	if (joyTote.whenDpadDown()) {
+        	if (joyTote.whenDpadDown() || joyBin.whenDpadDown()) {
         		Common.debug("Decrementing play number");
         		 auto.prevPlay();
         	}
-        	if (joyTote.whenSelect()) {
+        	if (joyTote.whenSelect()  || joyBin.whenSelect()) {
         		 auto.load("playbook.txt");
         	}
         		
-    		SmartDashboard.putNumber("Play Number: ",auto.getPlay());
+    		SmartDashboard.putNumber("Play Number",auto.getPlayNum());
+    		SmartDashboard.putString("Play", auto.getPlayName());
         	Timer.delay(.1);
         } 
         Common.debug("Ending: disabled mode");
@@ -71,7 +73,7 @@ public class Robot extends SampleRobot {
     // AUTONOMOUS MODE
     public void autonomous() {
         dt.setSafetyEnabled(false);
-        Common.debug("Starting Auto Play #"+auto.getPlay());
+        Common.debug("Starting Auto Play #"+auto.getPlayNum());
         auto.run();
     }
 
@@ -130,16 +132,16 @@ public class Robot extends SampleRobot {
         	
         	
         	// FOREBAR
-        	if (joyBin.dpadUp()) {						// Forebar is tri-state: Up, Down or Stopped
+        	if (joyBin.dpadUp() || joyBin.leftBumper()) {						// Forebar is tri-state: Up, Down or Stopped
         		claw.forebarUp();
-        	} else if (joyBin.dpadDown()) {
+        	} else if (joyBin.dpadDown() || joyBin.rightBumper()) {
         		claw.forebarDown();
         	} else {
         		claw.forebarStop();
         	}
 
         	// MAST
-        	if (joyBin.whenY() || joyBin.whenLeftBumper()) {
+        	if (joyBin.whenY()) {
         		claw.mastToggle();        	
         	} 
         	
@@ -152,7 +154,7 @@ public class Robot extends SampleRobot {
  	        }
  	        
  	        // HAND
- 	        if (joyBin.whenA() || joyBin.whenRightBumper()) {
+ 	        if (joyBin.whenA()) {
  	        	claw.handToggle();
  	        }
  	        

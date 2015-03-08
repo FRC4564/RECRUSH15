@@ -11,7 +11,7 @@ public class Claw {
 	
 	//Define Mast 
 	Solenoid mastSol = new Solenoid(Constants.SOL_MAST);
-	private static final boolean MAST_SOL_IN = true;  			//Solenoid setting to move mast in.
+	private static final boolean MAST_SOL_IN = false;  			//Solenoid setting to move mast in.
 	private static final boolean MAST_SOL_OUT = ! MAST_SOL_IN;  //Solenoid setting to move mast out.
 	private boolean mastPositionIn = true ;  					//Current mast position. True when mast is retracted.
 	
@@ -27,20 +27,21 @@ public class Claw {
 	private static final double CARRIAGE_MAX = 54;
 	
 	// PID Carriage
-	private static final double HEIGHT_Kp = 0.3;
+	private static final double HEIGHT_Kp = 3.5;
     private static final double HEIGHT_Kd = 0;
-    private static final double SPEED_Kp = 0.08;
-    private static final double SPEED_Kd = 0.000;
-    private static final double TOLERANCE = 0.25;  // Allowable error for PIDheight (Inches).
+    private static final double VEL_Kp = 0.02;
+    private static final double VEL_Kd = 0.000;
+    private static final double TOLERANCE = 0.35;  // Allowable error for PIDheight (Inches).
     private double targetPIDHeight = CARRIAGE_MAX;  //Carriage's home position.
 	private double prevPIDHeightError = 0.0;
-	private double prevPIDSpeedError = 0.0;
-	private double prevPIDSpeedPower = 0.0;
-	private static final double SPEED_MIN_IPS = 3.0;
-	private static final double SPEED_MAX_IPS = 15.0;
-	private double targetPIDSpeed = 0.0;
+	private double prevPIDVelError = 0.0;
+	private double prevPIDPower = 0.0;
+	private double targetPIDVel = 0.0;
+	private static final double VEL_MIN_IPS = 3.0;
+	private static final double VEL_MAX_IPS = 10.0;
 	private static final boolean MOTOR_INVERT = false;  // Inverted means positive motor values moves carriage down.
 	private static final double MOTOR_MAX_POWER = 1.0; // Maximum power allowed for carriage motor.
+	private static final double MOTOR_MIN_POWER = 0.2; // Minimum power for carriage motor.
 	
 	//Carriage States
 	private final static int CARRIAGE_STOPPED = 0;
@@ -84,6 +85,7 @@ public class Claw {
 	// Initiate carriage move to home position
 	public void init() {
 		carriageState = CARRIAGE_INIT;
+		targetPIDHeight = CARRIAGE_MAX;
 		encoder.setDistancePerPulse(1.0/CARRIAGE_COUNTS_PER_INCH);  // Calibrate encoder to inches of travel
 	}
 	
@@ -165,57 +167,57 @@ public class Claw {
 		// Power the motor
 		carriageMotor.set(power);
 	}
+
 	
 	// Force motor stop, used to end autonomous
 	public void stop() { 
-		setMotor(0);		
+		setMotor(0);
 	}
 		
-	// Move carriage at target speed.  Brake is released/engaged based on speed.
+	// Move carriage at target velocity.  Brake is released/engaged based on velocity.
 	//Speed is constrained to Min/Max allowable.
-	private void PIDSpeed() {
+	private void PIDVelocity() {
 		double error, power, P, D;
 		// Calculate PID
 		if (carriageState != CARRIAGE_STOPPED) {
-			if (targetPIDSpeed == 0) {
+			if (targetPIDVel == 0) {
 				power = 0;
 				brake.set(false);	// Set brake.
 			} else {
-				targetPIDSpeed = Common.constrain(targetPIDSpeed, SPEED_MIN_IPS, SPEED_MAX_IPS) ;
-				error = targetPIDSpeed - encoder.getRate();
-				P = error * SPEED_Kp;
-				D = (error - prevPIDSpeedError) / (1.0 / Constants.REFRESH_RATE) * SPEED_Kd;
-				//prevPIDSpeedError = error;
+				targetPIDVel = Common.constrain(targetPIDVel, VEL_MIN_IPS, VEL_MAX_IPS) ;
+				error = targetPIDVel - -encoder.getRate();
+				P = error * VEL_Kp;
+				//D = (error - prevPIDVelError) / (1.0 / Constants.REFRESH_RATE) * VEL_Kd;
+				//prevPIDVelError = error;
+				D = 0;
 				//
-				power = P + D; //+ prevPIDSpeedPower;
-				if (power > MOTOR_MAX_POWER) {
-					power = MOTOR_MAX_POWER;
-				} else if (power < -MOTOR_MAX_POWER) {
-					power = -MOTOR_MAX_POWER;
-				}
+				power = P + D + prevPIDPower;
+				// Contstrain within Min/Max allowed
+				power = Common.constrain(power, MOTOR_MIN_POWER, MOTOR_MAX_POWER);				
 				brake.set(true); // Release brake.
 			}
 			setMotor(power);
-			//prevPIDSpeedPower = power;
+			prevPIDPower = power;
 		}
 	}
 	
-	//  Calculates speed to move carriage to reach target if moving, otherwise set speed to 0.
+	//  Calculates velocity to move carriage to reach target if moving, otherwise set velocity to 0.
 	//  Height is constrained to safe limits.
 	private void PIDHeight() {
-	    double error, speed, P, D;
+	    double error, velocity, P, D;
 	    if (carriageState == CARRIAGE_MOVING) { 
 			// Calculate PID
 	    	targetPIDHeight = Common.constrain(targetPIDHeight, safeMinHeight(), safeMaxHeight());
 			error =  targetPIDHeight - carriageHeight();  // Targeted height from floor versus current carriage position  
 			P = error * HEIGHT_Kp;
-			D = (error - prevPIDHeightError) / (1.0 / Constants.REFRESH_RATE) * HEIGHT_Kd;
+			//D = (error - prevPIDHeightError) / (1.0 / Constants.REFRESH_RATE) * HEIGHT_Kd;
+			D=0;
 			prevPIDHeightError = error;
-			speed = P + D;
+			velocity = P + D;
 	    } else {
-			speed = 0;
+			velocity = 0;
 		}
-		targetPIDSpeed = speed;
+		targetPIDVel = velocity;
 	}
 
 	// Set carriage to move to safe height from floor to have claw in vertical position
@@ -225,24 +227,28 @@ public class Claw {
 	//	}		
 	//}
 	
-	// Move the carriage at the given speed, by setting a target relative to current position
-	// Speed can be +1.0 to -1.0 where +1.0 is up at 100% of MAX_IPS.
-	// Update cycle is typcially 100 cycles per second.
-	public void moveFree(double speed)  {
-		if (speed != 0 && carriageState != CARRIAGE_STOPPED) {
-			if ((speed > 0 && carriageHeight() < safeMaxHeight() ) ||
-				( speed < 0 && carriageHeight() > safeMinHeight()) ) {
-				//double distance = SPEED_MAX_IPS * speed / Constants.REFRESH_RATE * 5;  //Inches to move within a refresh cycle
-				//gotoHeight(getHeight() + distance);  //Move relative to current height
-				targetPIDSpeed = SPEED_MAX_IPS * speed;
-				carriageState = CARRIAGE_FREE;
+	// Move the carriage at the given velocity, for free joysick control
+	// Velocity can be +1.0 to -1.0 where +1.0 is up at 100% of MAX_IPS.
+	// Update cycle is typcially 50 cycles per second.
+	public void moveFree(double velocity)  {
+		if (carriageState != CARRIAGE_STOPPED) {
+			if ((velocity > 0 && carriageHeight() < safeMaxHeight() ) ||
+				( velocity < 0 && carriageHeight() > safeMinHeight()) ) {
+				targetPIDVel = VEL_MAX_IPS * velocity;
+				carriageState = CARRIAGE_FREE; 
+			} else {
+				// Exit FREE state when velocity = 0 or limits reached. Force current height to the target height.
+				if (carriageState == CARRIAGE_FREE) {
+					carriageState = CARRIAGE_IDLE;
+					targetPIDHeight = carriageHeight();
+				}
 			}
 		}
 	}
 	
 	// Move carriage to a specific height (0 at bottom)
 	public void carriageTo(double inches) {
-		targetPIDHeight = Common.constrain(inches, 0, CARRIAGE_MAX);
+		targetPIDHeight = Common.constrain(inches, safeMinHeight(), safeMaxHeight());
 		carriageState = CARRIAGE_MOVING;
 	}
 	
@@ -314,53 +320,49 @@ public class Claw {
 	// Move carriage upward until limit switch and then set to Idle state
 	private void updateInit() {
 		if (carriageLimit.get() == CARRIAGE_LIMIT_PRESSED) {
-			targetPIDSpeed = 0;
+			targetPIDVel = 0;
 			carriageState = CARRIAGE_IDLE;
 			encoder.reset();
 		} else {
-			targetPIDSpeed = 6;
+			targetPIDVel = 6;
 		}
+		PIDVelocity();
 	}
+	
+	
+	// Continue moving carriage until it has reached target for at fraction of a second
+	private void updateMove() {
+		if (Math.abs(carriageHeight() - targetPIDHeight) <= TOLERANCE) {
+			// Reached target, but it needs to stay within bounds until timer finishes
+			if (idleTimer.done()) {
+				carriageState = CARRIAGE_IDLE;
+			}
+		} else {
+			carriageState = CARRIAGE_MOVING;
+			idleTimer.set(0.25);   // Reset timer for idle delay
+		}
+		PIDHeight();
+		PIDVelocity();
+	}
+	
 	
 	// Call update method every refresh cycle to update carriage and wrist movement
 	public void update() {
-		
 		if (carriageState == CARRIAGE_INIT) {
 			updateInit();
-			PIDSpeed();
 		} else if (carriageState == CARRIAGE_FREE) {
-			PIDSpeed();
-			carriageState = CARRIAGE_IDLE;
-			targetPIDSpeed = 0;
+			PIDVelocity();
 			targetPIDHeight = carriageHeight();
 		} else if (carriageState != CARRIAGE_STOPPED) {
-			//targetPIDHeight = Common.constrain(targetPIDHeight, safeMinHeight(), safeMaxHeight());
-			if (Math.abs(carriageHeight() - targetPIDHeight) <= TOLERANCE) {
-				if (idleTimer.done()) {
-					carriageState = CARRIAGE_IDLE;
-				} else {
-					carriageState = CARRIAGE_MOVING;
-					// idleTimer.set(0.5);   // Reset timer for idle delay
-				}
-			} else {
-				carriageState = CARRIAGE_MOVING;
-				idleTimer.set(0.5);   // Reset timer for idle delay
-			}
-			PIDHeight();
-			PIDSpeed();
+			updateMove();
 		}
-		//wristUpdate();
-		//SmartDashboard.putNumber("Carriage Distance", encoder.getDistance());
-		//SmartDashboard.putNumber("Carriage Encoder", encoder.get());
-		//SmartDashboard.putBoolean("Carriage Limit?", carriageLimit.get() == CARRIAGE_LIMIT_PRESSED);
-		SmartDashboard.putNumber("Carriage Height", carriageHeight());
-		SmartDashboard.putNumber("Carriage tHeight", targetPIDHeight);
-		//SmartDashboard.putNumber("Carriage tSpeed", targetPIDSpeed);
-		SmartDashboard.putNumber("CarState", carriageState);
-		//SmartDashboard.putNumber("Carriage Safe Min", safeMinHeight());
+
+		SmartDashboard.putNumber("Carriage Encoder Height", carriageHeight());
+		SmartDashboard.putNumber("Carriage Target Height", targetPIDHeight);
+		SmartDashboard.putNumber("Carriage Encoder Vel", encoder.getRate());
+		SmartDashboard.putNumber("Carriage Target Vel", targetPIDVel);
+		SmartDashboard.putNumber("Carriage PID Power", prevPIDPower);
 		
-		//SmartDashboard.putBoolean("Wrist Limit Hor", horizontalLimit.get() == HORIZONTAL_LIMIT_PRESSED);
-		//SmartDashboard.putBoolean("Wrist Limit Ver", verticalLimit.get() == VERTICAL_LIMIT_PRESSED);
 		
 	}
 	

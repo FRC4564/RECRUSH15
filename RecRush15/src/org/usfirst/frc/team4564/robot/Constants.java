@@ -36,6 +36,6 @@ public class Constants {
 	public static final int ANA_TILT = 1;
 	
 	//MISCELLANEOUS
-	public static final double REFRESH_RATE = 100;  //Refresh rate for main loop and all related subsystem updates
+	public static final double REFRESH_RATE = 50;  //Refresh rate for main loop and all related subsystem updates
 	
 } 

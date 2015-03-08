@@ -34,13 +34,13 @@ public class Lift {
     private static final int MAX_LEVEL = 6; // Highest level lift can reach.
 
     //PID constants and variables
-    private static final double VEL_Kp = 0.003;
+    private static final double VEL_Kp = 0.002;
     private static final double VEL_Kd = 0.000;
     private static final double MOTOR_MAX_POWER = 1.0;  //Maximum allowed motor power (constrained by Velocity PID) 
     private static final double HEIGHT_Kp = 3.0;
     private static final double HEIGHT_Kd = 0.1;
     private static final double VEL_MIN_IPS = 1.8;
-    private static final double VEL_MAX_IPS = 15.0;     //Fastest allowed movement of lift (constrained by Height PID).
+    private static final double VEL_MAX_IPS = 25.0;     //Fastest allowed movement of lift (constrained by Height PID).
     private double targetPIDVelocity = 0.0;	            //Target Velocity, controlled via PID
     private double prevPIDVelocityError = 0.0;          //Used for PID derivative
     private double prevPIDVelocityPower = 0.0;          //Motor power is adjusted by PID

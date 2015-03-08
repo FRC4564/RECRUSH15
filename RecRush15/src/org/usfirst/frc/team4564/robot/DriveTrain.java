@@ -345,14 +345,11 @@ public class DriveTrain extends RobotDrive {
     	double turn = turnAccelCurve(PIDTurn(), 1.0);
     	double slide = slideAccelCurve(PIDMoveLR(), 0.1);
    		setDrive(drive,turn,slide);
-		SmartDashboard.putNumber("turnState", turnState );
    		//SmartDashboard.putNumber("targetHeading", targetHeading );
 		//SmartDashboard.putNumber("current heading", gyro.getAngle() );
-		//SmartDashboard.putNumber("turn", turn);
-		//SmartDashboard.putNumber("moveSpeedLR", moveSpeed );
-		SmartDashboard.putNumber("moveTargetLR", moveTargetLR );
-		SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
-		SmartDashboard.putNumber("encoderLR", encoderLR.get());
+		//SmartDashboard.putNumber("moveTargetLR", moveTargetLR );
+		//SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
+		//SmartDashboard.putNumber("encoderLR", encoderLR.get());
     }
     
     // Reset gyro to 0 degrees.
