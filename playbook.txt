@@ -206,11 +206,12 @@ Script 2 Tote + Bin (Single forks)
 driveInit
 liftInit
 handClose
+mastIn
 forebarUp
 # Drive into tote, pick up to level 2
 driveForward 8
-driveWait
 liftLevel 2
+driveWait
 # Turn 180 to pick up and stack second tote
 driveTurn 180
 driveWait
@@ -225,9 +226,9 @@ driveWait
 # Head to AZ
 driveSpeed 85
 driveForward 100
-forebarDown
 driveWait
 # Rotate and face right and init claw
 clawInit
+forebarDown
 driveTurn 90
 driveWait
