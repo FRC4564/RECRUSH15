@@ -1,4 +1,4 @@
-# Playbook scripts - March 5th, 2015
+# Playbook scripts - March 17th, 2015
 
 Script Stay Put
 
@@ -13,7 +13,7 @@ handClose
 forebarDown
 
 
-Script Tote and Bin (Dual)
+Script Tote and Bin (Dual fork)
 
 # Picks up tote, rotates around, picks up bin, and then drives to AZ.
 
@@ -121,22 +121,6 @@ carriageWait
 liftWait
 
 
-Script Carriage Up/Down 
-
-clawInit
-carriageWait
-carriageTo 15
-carriageWait
-carriageTo 50
-carriageWait
-carriageTo 15
-carriageWait
-carriageTo 50
-carriageWait
-carriageTo 15
-carriageWait
-wait 10
-
 Script Tote and Bin (Single)
 
 # Picks up tote, rotates around, picks up bin, and then drives to AZ.
@@ -181,5 +165,69 @@ driveWait
 driveSpeed 90
 driveForward 110
 driveWait
+driveTurn 90
+driveWait
+
+
+
+
+# Test carriage
+Script Carriage Test Up/Down 
+
+clawInit
+carriageWait
+carriageTo 15
+carriageWait
+carriageTo 50
+carriageWait
+carriageTo 15
+carriageWait
+carriageTo 50
+carriageWait
+carriageTo 15
+carriageWait
+wait 10
+
+
+
+
+Script 2 Tote + Bin (Single forks)
+
+# Picks up a can, drives into and picks up a tote, turns 180 and stacks a second tote, and turns and drives into auto zone.
+
+# Setup
+# Set robot in the MIDDLE RIGHT or the MIDDLE LEFT position, face left 
+# Carriage starts LOWER, low enough for claw to be around bin with the forebar down
+# Claw starts closed; around recycle can
+# Mast starts in OUT position
+# Forebar starts in DOWN position
+
+# Inits
+driveInit
+liftInit
+handClose
+forebarUp
+# Drive into tote, pick up to level 2
+driveForward 8
+driveWait
+liftLevel 2
+# Turn 180 to pick up and stack second tote
+driveTurn 180
+driveWait
+driveForward 36
+driveWait
+liftLevel 0
+liftWait
+liftLevel 1
+# Turn back 90 degrees
+driveTurn -90
+driveWait
+# Head to AZ
+driveSpeed 85
+driveForward 100
+forebarDown
+driveWait
+# Rotate and face right and init claw
+clawInit
 driveTurn 90
 driveWait
