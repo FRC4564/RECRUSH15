@@ -10,7 +10,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 public class Claw {
 	
 	//Define Mast 
-	Solenoid mastSol = new Solenoid(Constants.SOL_MAST);
+	Solenoid mastSolIn = new Solenoid(Constants.SOL_MAST_IN);
+	Solenoid mastSolOut = new Solenoid(Constants.SOL_MAST_OUT);
 	private static final boolean MAST_SOL_IN = false;  			//Solenoid setting to move mast in.
 	private static final boolean MAST_SOL_OUT = ! MAST_SOL_IN;  //Solenoid setting to move mast out.
 	private boolean mastPositionIn = true ;  					//Current mast position. True when mast is retracted.
@@ -23,7 +24,7 @@ public class Claw {
 	private Solenoid brake = new Solenoid(Constants.SOL_BRAKE);
     Countdown idleTimer = new Countdown();  //Timer to wait after for PID to be in tolerance before setting to Idle.
     private static final boolean CARRIAGE_LIMIT_PRESSED = true;  //Value of limit switch when pressed.
-	private static final double CARRIAGE_COUNTS_PER_INCH = 70.09174311;   //Encoder ticks per inch of carriage movement
+	private static final double CARRIAGE_COUNTS_PER_INCH = 70.09174311;
 	private static final double CARRIAGE_MAX = 54;
 	
 	// PID Carriage
@@ -90,12 +91,14 @@ public class Claw {
 	}
 	
 	public void mastIn() {
-	    mastSol.set(MAST_SOL_IN);
+	    mastSolIn.set(true);
+	    mastSolOut.set(false);
 	    mastPositionIn = true;
 	    	}	
 	
 	public void mastOut() {
-		mastSol.set(MAST_SOL_OUT);
+		mastSolIn.set(false);
+		mastSolOut.set(true);
 		mastPositionIn = false;
 	}
 	
@@ -362,6 +365,7 @@ public class Claw {
 		SmartDashboard.putNumber("Carriage Encoder Vel", encoder.getRate());
 		SmartDashboard.putNumber("Carriage Target Vel", targetPIDVel);
 		SmartDashboard.putNumber("Carriage PID Power", prevPIDPower);
+		//SmartDashboard.putNumber("Carriage Encoder Count", encoder.get());
 		
 		
 	}
