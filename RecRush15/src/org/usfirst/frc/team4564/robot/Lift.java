@@ -34,8 +34,8 @@ public class Lift {
     private static final int MAX_LEVEL = 6; // Highest level lift can reach.
 
     //PID constants and variables
-    private static final double VEL_Kp = 0.002;
-    private static final double VEL_Kd = 0.000;
+    private static final double VEL_Kp = 0.023;
+    private static final double VEL_Kd = 0.00;
     private static final double MOTOR_MAX_POWER = 1.0;  //Maximum allowed motor power (constrained by Velocity PID) 
     private static final double HEIGHT_Kp = 3.0;
     private static final double HEIGHT_Kd = 0.1;
@@ -287,7 +287,7 @@ public class Lift {
 		//SmartDashboard.putNumber("Target height", targetPIDHeight);
 		//SmartDashboard.putNumber("Target velocity", targetPIDVelocity);		
 		//SmartDashboard.putNumber("Target Level", targetLevel);		
-
+		SmartDashboard.putNumber("Lift Velocity", encoder.getRate());
 	}
 	// Is lift idle - Idle means lift is initialized and ready for a move request.
 	public boolean isIdle() {

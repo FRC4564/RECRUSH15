@@ -28,7 +28,8 @@ public class Constants {
 	public static final int SOL_MAST_IN = 2;
 	public static final int SOL_BRAKE = 3;
 	public static final int SOL_MAST_OUT = 4;
-	public static final int SOL_HAND = 5;
+	public static final int SOL_HAND_IN = 1;
+	public static final int SOL_HAND_OUT = 0;
 	public static final int SOL_FOREBAR_DOWN = 6;
 	public static final int SOL_FOREBAR_UP = 7;
 	

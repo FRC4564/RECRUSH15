@@ -76,9 +76,8 @@ public class Claw {
     private int wristState = WRIST_IDLE;
     
 	//Define Hand 
-    Solenoid handSol = new Solenoid(Constants.SOL_HAND);
-	private static final boolean HAND_SOL_OPEN = true;	//Solenoid value to open the hand.
-	private static final boolean HAND_SOL_CLOSE = ! HAND_SOL_OPEN;  //Solenoid value to close the hand
+    Solenoid handSolIn = new Solenoid(Constants.SOL_HAND_IN);
+    Solenoid handSolOut = new Solenoid(Constants.SOL_HAND_OUT);
 	private boolean handPositionOpen = false ;  //Current hand position. True when hand is open.
 	private static final double THUMB_HEIGHT = 9;
 	private static final double FINGER_HEIGHT = 18;
@@ -234,7 +233,7 @@ public class Claw {
 	// Velocity can be +1.0 to -1.0 where +1.0 is up at 100% of MAX_IPS.
 	// Update cycle is typcially 50 cycles per second.
 	public void moveFree(double velocity)  {
-		if (carriageState != CARRIAGE_STOPPED) {
+		if (carriageState != CARRIAGE_STOPPED && carriageState != CARRIAGE_INIT) {
 			if ((velocity > 0 && carriageHeight() < safeMaxHeight() ) ||
 				( velocity < 0 && carriageHeight() > safeMinHeight()) ) {
 				targetPIDVel = VEL_MAX_IPS * velocity;
@@ -290,12 +289,14 @@ public class Claw {
 	}
 	
 	public void handOpen() {
-	    handSol.set(HAND_SOL_OPEN);
+	    handSolIn.set(true);
+	    handSolOut.set(false);
 	    handPositionOpen = true;
 	}
 	
 	public void handClose() {
-	    handSol.set(HAND_SOL_CLOSE);
+		handSolIn.set(false);
+	    handSolOut.set(true);
 	    handPositionOpen = false;
 	}
 	

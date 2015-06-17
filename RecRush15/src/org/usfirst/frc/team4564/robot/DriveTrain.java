@@ -42,16 +42,16 @@ public class DriveTrain extends RobotDrive {
     // Forward/Backward, Left/Right and Turn PID Parameters
     private static final double Kp_FB = .08;
     private static final double Kp_LR = .03;
-    private final static double Kp_TURN = 0.03;
+    private final static double Kp_TURN = 0.04;
     private static final double MIN_SPEED_FB = 0.55; 	//Min motor power
     private static final double MIN_SPEED_LR = 0.6; 	//Min motor power
-    private static final double MIN_SPEED_TURN = 0.55;	//Min motor power
+    private static final double MIN_SPEED_TURN = 0.5;	//Min motor power was .55
     private static final double MAX_SPEED_FB = 0.90;	//Max motor power
     private static final double MAX_SPEED_LR = 0.90;	//Max motor power
-    private static final double MAX_SPEED_TURN = 1.0;	//Max motor power
+    private static final double MAX_SPEED_TURN = 1.0;	//Max motor power was 2
     private static final double TOLERANCE_LR = 0.5;		// allowable tolerance between target and encoder in inches
     private static final double TOLERANCE_FB = 0.5; 	// allowable tolerance between target and encoder in inches
-    private static final double TOLERANCE_TURN = 2; 	// allowable tolerance between target and encoder in degrees
+    private static final double TOLERANCE_TURN = 1; 	// allowable tolerance between target and encoder in degrees
     private static final int STATE_IDLE = 0;		// Both FB and LR PIDs are disabled.  Heading hold is still active.
     private static final int STATE_MOVING = 1;		// Movement in progress to reach target 
     private double moveTargetFB = 0; 	// Forward/Backward target distance relative to current encoder distance
@@ -199,8 +199,8 @@ public class DriveTrain extends RobotDrive {
 		setDrive(drive,turn,slide);
 		//SmartDashboard.putNumber("encoderFB raw ", encoderFB.get() );
 		//SmartDashboard.putNumber("moveTargetLR", moveTargetLR );
-		//SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
-		//SmartDashboard.putNumber("encoderLR", encoderLR.get());
+		SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
+		SmartDashboard.putNumber("encoderLR", encoderLR.get());
     }
     	
 	// Normalizes a heading to be within 0 to 360 degrees.
