@@ -19,7 +19,7 @@ public class Lift {
 	private static final int LIFT_FREE = 4;     //Moving freely under joystick control
 	//Physical dimensions
     private static final double LIFT_MIN_HEIGHT = 8.75;   // Inches from top of lift arm to floor when lift is at its lower limit.
-    private static final double LIFT_MAX = 75;  // Inches from top of lift arm to floor when lift is at its upper limit.
+    private static final double LIFT_MAX = 73;  // Inches from top of lift arm to floor when lift is at its upper limit.
     private static final double PLATFORM = 2;   // Height of the field scoring platform
     private static final double TOTE_HEIGHT = 12.1; // Dimensional height of a tote
     private static final double TOTE_STACKED = 11.875;  // When interlocked, additional height of a stacked tote

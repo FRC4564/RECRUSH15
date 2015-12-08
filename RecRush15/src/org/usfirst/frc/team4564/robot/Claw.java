@@ -9,6 +9,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Claw {
 	
+	////// Not the claw
+	Solenoid grapplerSolIn = new Solenoid(Constants.SOL_GRAPPLER_IN);
+	Solenoid grapplerSolOut = new Solenoid(Constants.SOL_GRAPPLER_OUT);
+	private boolean grapplerPositionOut = false;
 	//Define Mast 
 	Solenoid mastSolIn = new Solenoid(Constants.SOL_MAST_IN);
 	Solenoid mastSolOut = new Solenoid(Constants.SOL_MAST_OUT);
@@ -53,8 +57,8 @@ public class Claw {
 	private int carriageState = CARRIAGE_STOPPED;
 	
 	//Define Forebar
-	private Solenoid forebarUpSol = new Solenoid(Constants.SOL_FOREBAR_UP);
-	private Solenoid forebarDownSol = new Solenoid(Constants.SOL_FOREBAR_DOWN);
+	//private Solenoid forebarUpSol = new Solenoid(Constants.SOL_FOREBAR_UP);
+	//private Solenoid forebarDownSol = new Solenoid(Constants.SOL_FOREBAR_DOWN);
 	private static final boolean FOREBAR_SOL_ENABLE = true;
 	private static final boolean FOREBAR_SOL_DISABLE = ! FOREBAR_SOL_ENABLE;
 	private boolean forebarPostionUp = true;
@@ -81,12 +85,35 @@ public class Claw {
 	private boolean handPositionOpen = false ;  //Current hand position. True when hand is open.
 	private static final double THUMB_HEIGHT = 9;
 	private static final double FINGER_HEIGHT = 18;
+
 	
 	// Initiate carriage move to home position
 	public void init() {
 		carriageState = CARRIAGE_INIT;
 		targetPIDHeight = CARRIAGE_MAX;
 		encoder.setDistancePerPulse(1.0/CARRIAGE_COUNTS_PER_INCH);  // Calibrate encoder to inches of travel
+	}
+	
+	
+	//NOT THE CLAW
+	public void grapplerIn() {
+	    grapplerSolIn.set(true);
+	    grapplerSolOut.set(false);
+	    grapplerPositionOut = true;
+	    	}	
+	
+	public void grapplerOut() {
+		grapplerSolIn.set(false);
+		grapplerSolOut.set(true);
+		grapplerPositionOut = false;
+	}
+	
+	public void grapplerToggle() {
+		if(grapplerPositionOut) {
+			grapplerOut();
+		} else {
+			grapplerIn();
+		}
 	}
 	
 	public void mastIn() {
@@ -109,7 +136,9 @@ public class Claw {
 		}
 	}
 	
-	public void forebarUp() {
+	
+	
+	/*public void forebarUp() {
 		forebarUpSol.set(FOREBAR_SOL_ENABLE);
 		forebarDownSol.set(FOREBAR_SOL_DISABLE);
 		forebarPostionUp = true;
@@ -126,7 +155,7 @@ public class Claw {
 		forebarDownSol.set(FOREBAR_SOL_DISABLE);
 		forebarUpSol.set(FOREBAR_SOL_DISABLE);
 	}
-	
+	*/
 	// CARRIAGE
 	
 	// Calculate the height of the carriage along the mast. 
@@ -263,6 +292,8 @@ public class Claw {
 	public boolean isMoving() {
 		return (carriageState == CARRIAGE_MOVING || carriageState == CARRIAGE_FREE);
 	}
+	
+	
 	
 	// WRIST
 	

@@ -418,11 +418,11 @@ public class Auto {
 				status = DONE;				
 				break;
 			case "FOREBARUP":
-				claw.forebarUp();
+//GRAPPLER override				claw.forebarUp();
 				status = DONE;
 				break;
 			case "FOREBARDOWN":
-				claw.forebarDown();
+//GRPPLER override				claw.forebarDown();
 				status = DONE;				
 				break;
 			case "WAIT":

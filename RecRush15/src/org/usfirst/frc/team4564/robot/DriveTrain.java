@@ -36,7 +36,7 @@ public class DriveTrain extends RobotDrive {
     		true, EncodingType.k1X);
     private Encoder encoderLR = new Encoder(Constants.DIO_DRIVE_LR_ENCODER_A, Constants.DIO_DRIVE_LR_ENCODER_B,
     		true, EncodingType.k1X);
-    private static final double COUNTS_PER_INCH_FB = 42.939;
+    private static final double COUNTS_PER_INCH_FB = 38.4;
     private static final double COUNTS_PER_INCH_LR = 7.12359;
     
     // Forward/Backward, Left/Right and Turn PID Parameters
@@ -64,8 +64,9 @@ public class DriveTrain extends RobotDrive {
     private double govenor = 1.0; 		// Overall governor of Max power to drive motors for PIDs.  1.0=100% or full power 0.5=50% 
     
     // Gyro-based heading control and PID
-    Gyro gyro = new Gyro(Constants.ANA_HEADING);
-    private static final double GYRO_CALIBRATION = 0.00669; // Volts/sec/degree
+    public static Gyro gyro = new Gyro(Constants.ANA_HEADING);
+    //0.00669
+    private static final double GYRO_CALIBRATION = 0.00660; // Volts/degree/sec
     private double prevTurn = 0;       // Used to monitor hDrive Trun input to control auto heading hold
 
     //Drivetrain constructor
@@ -152,6 +153,12 @@ public class DriveTrain extends RobotDrive {
     	arcadeDrive(drive, turn);
     	frontC.set(-slide - turn * 0.1);
     	rearC.set(slide - turn * 0.1);
+		SmartDashboard.putNumber("encoderFB inches", encoderFB.getDistance() );
+		SmartDashboard.putNumber("encoderFB", encoderFB.get() );
+		SmartDashboard.putNumber("gyroHeading", gyro.getAngle());
+		SmartDashboard.putNumber("GyroRate", gyro.getRate());
+		SmartDashboard.putNumber("TurnPID", turn);
+		
     }
     
     public void stop() {
@@ -199,8 +206,9 @@ public class DriveTrain extends RobotDrive {
 		setDrive(drive,turn,slide);
 		//SmartDashboard.putNumber("encoderFB raw ", encoderFB.get() );
 		//SmartDashboard.putNumber("moveTargetLR", moveTargetLR );
-		SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
-		SmartDashboard.putNumber("encoderLR", encoderLR.get());
+//		//SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
+		//SmartDashboard.putNumber("encoderLR", encoderLR.get());
+
     }
     	
 	// Normalizes a heading to be within 0 to 360 degrees.
@@ -258,7 +266,7 @@ public class DriveTrain extends RobotDrive {
 				error = heading - (360 - targetHeading);
 			}
 			P = error * Kp_TURN;
-			turn = Common.constrain(P, MIN_SPEED_TURN, MAX_SPEED_TURN * govenor); 
+			turn = Common.constrain(P, MIN_SPEED_TURN, MAX_SPEED_TURN) * govenor;
 		}
 		return turn; 
     }
@@ -344,12 +352,13 @@ public class DriveTrain extends RobotDrive {
     	double drive = driveAccelCurve(PIDMoveFB(), 0.1);
     	double turn = turnAccelCurve(PIDTurn(), 1.0);
     	double slide = slideAccelCurve(PIDMoveLR(), 0.1);
-   		setDrive(drive,turn,slide);
+   		setDrive(drive,turn/*-0.32*/,slide);
    		//SmartDashboard.putNumber("targetHeading", targetHeading );
 		//SmartDashboard.putNumber("current heading", gyro.getAngle() );
 		//SmartDashboard.putNumber("moveTargetLR", moveTargetLR );
 		//SmartDashboard.putNumber("encoderLR inches", encoderLR.getDistance() );
 		//SmartDashboard.putNumber("encoderLR", encoderLR.get());
+   		
     }
     
     // Reset gyro to 0 degrees.

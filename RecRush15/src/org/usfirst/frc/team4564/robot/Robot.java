@@ -90,18 +90,27 @@ public class Robot extends SampleRobot {
         	} else {
 	       		dt.hDrive(joyTote.leftY(), joyTote.leftX(), joyTote.rightTrigger() - joyTote.leftTrigger());	// Drive with arcade style using left stick by default	
         	}
-	       		
+	       	
+        	// GRAPPLER
+	    	if (joyTote.whenA()) {							// Toggle grappler open/close
+	    		claw.grapplerToggle();	    	
+	    	}
+        	
         	// LIFT
-    		
+    		/* Disable the level up/down with A/B buttons
 	    	if (joyTote.whenA()) {							// Level down
 	    		lift.levelDown();	    	
 	    	}
 	    	if (joyTote.whenB()) {							// level up
 	    		lift.levelUp();
 	    	}
+	    	*/
 	    	if (lift.isIdle() || lift.isMoving()) {			// Move lift freely, if ready for movement
         		if (joyTote.rightY() !=0 ) {
         			lift.moveFree(joyTote.rightY());
+        		}
+        		else  {
+        			lift.moveFree(joyBin.rightY());
         		}
         	}
         	
@@ -130,7 +139,7 @@ public class Robot extends SampleRobot {
         	
         	claw.moveFree(-joyBin.rightY());			// Move carriage freely, if ready for movement
         	
-        	
+ /* disabled this code for Grappler       	
         	// FOREBAR
         	if (joyBin.dpadUp() || joyBin.leftBumper()) {						// Forebar is tri-state: Up, Down or Stopped
         		claw.forebarUp();
@@ -139,6 +148,7 @@ public class Robot extends SampleRobot {
         	} else {
         		claw.forebarStop();
         	}
+*/
 
         	// MAST
         	if (joyBin.whenY()) {
@@ -182,17 +192,12 @@ public class Robot extends SampleRobot {
     public void test() {
     	Common.debug("Starting: test");
         dt.setSafetyEnabled(true);  
-    	if (lift.isIdle() != true) {
-    		lift.init();
-    	}
-    	if (claw.isIdle() != true) {
-    		claw.init();
-    	}
-
     	while (isEnabled()) {
-    	   	dt.update();
+    		dt.hDrive(0.0, joyTote.leftX(), 0.0);
+    	   	//dt.update();
 	    	lift.update();
-	    	claw.update();
+	    	SmartDashboard.putNumber("Gyro Angle", dt.gyro.getAngle());
+	    	SmartDashboard.putNumber("Gyro Rate", dt.gyro.getRate());
 	    	
 	    	Timer.delay(1.0 / Constants.REFRESH_RATE);
         }
